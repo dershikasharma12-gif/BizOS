@@ -1691,7 +1691,10 @@ function viewSuppliers(){
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800 flex items-center justify-center"><i data-lucide="truck" class="w-4 h-4 text-stone-600 dark:text-stone-300"></i></div>
               <div class="min-w-0"><div class="font-semibold truncate">${s.name}</div><div class="text-xs text-stone-500">${s.terms} · ★ ${s.rating}</div></div>
             </div>
-            <button onclick="openSupplierModal('${s.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            <div class="flex items-center gap-1">
+              <button onclick="openSupplierModal('${s.id}')" title="Edit" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+              <button onclick="deleteSupplier('${s.id}')" title="Delete" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
           </div>
           <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
             <div><div class="text-stone-500">Total purchases</div><div class="num font-semibold">${fmt(total)}</div></div>
@@ -1727,6 +1730,16 @@ function saveSupplier(id,isEdit){
   if(!isEdit){ s.rating=5; s.balance=0; state.suppliers.push(s); }
   save(); closeModal(); toast(isEdit?'Supplier updated':'Supplier added'); router();
 }
+function deleteSupplier(id){
+  const s=findSupp(id); if(!s){ toast('Supplier not found','err'); return; }
+  const billCount=state.purchases.filter(p=>p.supplierId===id).length;
+  const msg=billCount>0
+    ? `Delete supplier "${s.name}"? They have ${billCount} purchase bill(s) — those bills will be kept but will show "—" as supplier.`
+    : `Delete supplier "${s.name}"?`;
+  if(!confirm(msg)) return;
+  state.suppliers=state.suppliers.filter(x=>x.id!==id);
+  save(); toast('Supplier deleted'); router();
+}
 
 /* ---------- Purchases ---------- */
 function viewPurchases(){
@@ -1741,16 +1754,20 @@ function viewPurchases(){
       <div class="overflow-x-auto scroll-thin">
         <table class="w-full text-sm">
           <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
-            <tr><th class="px-4 py-2.5 text-left">Bill</th><th class="px-4 py-2.5 text-left">Date</th><th class="px-4 py-2.5 text-left">Supplier</th><th class="px-4 py-2.5 text-right">Total</th><th class="px-4 py-2.5 text-right">Paid</th><th class="px-4 py-2.5 text-left">Status</th></tr>
+            <tr><th class="px-4 py-2.5 text-left">Bill</th><th class="px-4 py-2.5 text-left">Date</th><th class="px-4 py-2.5 text-left">Supplier</th><th class="px-4 py-2.5 text-right">Total</th><th class="px-4 py-2.5 text-right">Paid</th><th class="px-4 py-2.5 text-left">Status</th><th class="px-4 py-2.5 text-right">Actions</th></tr>
           </thead>
           <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
-            ${list.map(b=>`<tr class="row-hover">
+            ${list.length===0 ? '<tr><td colspan="7" class="text-center py-10 text-stone-500 text-sm">No purchase bills yet</td></tr>' : list.map(b=>`<tr class="row-hover">
               <td class="px-4 py-2.5 num font-medium">${b.number}</td>
               <td class="px-4 py-2.5 text-xs text-stone-500">${dateNice(b.date)}</td>
               <td class="px-4 py-2.5">${findSupp(b.supplierId)?.name||'—'}</td>
               <td class="px-4 py-2.5 num text-right font-semibold">${fmt(b.total)}</td>
               <td class="px-4 py-2.5 num text-right">${fmt(b.paid)}</td>
               <td class="px-4 py-2.5"><span class="text-xs px-2 py-0.5 rounded-md ${b.status==='paid'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30':'bg-amber-50 text-amber-700 dark:bg-amber-900/30'}">${b.status}</span></td>
+              <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                <button onclick="openPurchaseModal('${b.id}')" title="Edit" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="deletePurchase('${b.id}')" title="Delete" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -1758,33 +1775,44 @@ function viewPurchases(){
     </div>
   </div>`;
 }
-function openPurchaseModal(){
+function openPurchaseModal(id){
+  const isEdit=!!id;
+  const existing=isEdit?state.purchases.find(p=>p.id===id):null;
+  const line=existing?.lines?.[0]||{};
+  const defNum=isEdit?existing.number:`BILL-${2000+state.purchases.length+1}`;
+  const defDate=isEdit?existing.date:todayISO();
+  const defSupp=isEdit?existing.supplierId:'';
+  const defProd=isEdit?line.pid:'';
+  const defQty=isEdit?line.qty:10;
+  const defCost=isEdit?line.price:0;
+  const defTax=isEdit?(line.tax??18):18;
+  const defPaid=isEdit?existing.paid:0;
   showModal(`<div class="p-5 w-[640px] max-w-full">
-    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">New purchase bill</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
-    <form onsubmit="event.preventDefault(); savePurchase()" class="space-y-3 text-sm">
+    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">${isEdit?'Edit':'New'} purchase bill</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <form onsubmit="event.preventDefault(); savePurchase('${id||''}')" class="space-y-3 text-sm">
       <div class="grid grid-cols-3 gap-2">
-        <div><label class="text-xs font-medium text-stone-500">Bill #</label><input id="pbnum" value="BILL-${2000+state.purchases.length+1}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
-        <div><label class="text-xs font-medium text-stone-500">Date</label><input id="pbdate" type="date" value="${todayISO()}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
-        <div><label class="text-xs font-medium text-stone-500">Supplier</label><select id="pbsupp" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+        <div><label class="text-xs font-medium text-stone-500">Bill #</label><input id="pbnum" value="${defNum}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Date</label><input id="pbdate" type="date" value="${defDate}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Supplier</label><select id="pbsupp" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.suppliers.map(s=>`<option value="${s.id}" ${s.id===defSupp?'selected':''}>${s.name}</option>`).join('')}</select></div>
       </div>
       <div class="grid grid-cols-3 gap-2">
-        <div><label class="text-xs font-medium text-stone-500">Product</label><select id="pbprod" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
-        <div><label class="text-xs font-medium text-stone-500">Qty</label><input id="pbqty" type="number" value="10" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
-        <div><label class="text-xs font-medium text-stone-500">Unit cost</label><input id="pbcost" type="number" value="0" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Product</label><select id="pbprod" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.products.map(p=>`<option value="${p.id}" ${p.id===defProd?'selected':''}>${p.name}</option>`).join('')}</select></div>
+        <div><label class="text-xs font-medium text-stone-500">Qty</label><input id="pbqty" type="number" value="${defQty}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Unit cost</label><input id="pbcost" type="number" value="${defCost}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       </div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="pbtax" type="number" value="18" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
-        <div><label class="text-xs font-medium text-stone-500">Paid now</label><input id="pbpaid" type="number" value="0" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="pbtax" type="number" value="${defTax}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">${isEdit?'Paid':'Paid now'}</label><input id="pbpaid" type="number" value="${defPaid}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       </div>
-      <div class="text-xs text-stone-500">Receiving stock will increase the product's quantity automatically.</div>
+      <div class="text-xs text-stone-500">${isEdit?'Editing will adjust the product stock by the difference in quantity.':"Receiving stock will increase the product's quantity automatically."}</div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
-        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save bill</button>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">${isEdit?'Update bill':'Save bill'}</button>
       </div>
     </form>
   </div>`);
 }
-function savePurchase(){
+function savePurchase(id){
   const pid=document.getElementById('pbprod').value;
   const p=findProd(pid);
   const qty=Number(document.getElementById('pbqty').value||0);
@@ -1792,10 +1820,36 @@ function savePurchase(){
   const tax=Number(document.getElementById('pbtax').value||0);
   const paid=Number(document.getElementById('pbpaid').value||0);
   const sub=qty*cost; const taxA=sub*tax/100; const total=Math.round(sub+taxA);
+  if(id){
+    const existing=state.purchases.find(x=>x.id===id);
+    if(!existing){ toast('Bill not found','err'); return; }
+    // reverse old stock effect
+    const oldLine=existing.lines?.[0];
+    if(oldLine){
+      const oldProd=findProd(oldLine.pid);
+      if(oldProd) oldProd.stock-=oldLine.qty;
+    }
+    existing.number=document.getElementById('pbnum').value;
+    existing.date=document.getElementById('pbdate').value;
+    existing.supplierId=document.getElementById('pbsupp').value;
+    existing.lines=[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}];
+    existing.subtotal=sub; existing.tax=taxA; existing.total=total;
+    existing.paid=paid; existing.status=paid>=total?'paid':'unpaid';
+    if(p){ p.stock+=qty; p.cost=cost||p.cost; }
+    save(); closeModal(); toast('Purchase updated'); router();
+    return;
+  }
   const b={id:uid('po_'),number:document.getElementById('pbnum').value,date:document.getElementById('pbdate').value,supplierId:document.getElementById('pbsupp').value,lines:[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}],subtotal:sub,tax:taxA,total,paid,status:paid>=total?'paid':'unpaid'};
   state.purchases.push(b);
   if(p){ p.stock+=qty; p.cost=cost||p.cost; }
   save(); closeModal(); toast('Purchase saved'); router();
+}
+function deletePurchase(id){
+  const b=state.purchases.find(x=>x.id===id); if(!b){ toast('Bill not found','err'); return; }
+  if(!confirm(`Delete ${b.number}? This will reverse the stock added by this bill.`)) return;
+  (b.lines||[]).forEach(l=>{ const p=findProd(l.pid); if(p) p.stock-=l.qty; });
+  state.purchases=state.purchases.filter(x=>x.id!==id);
+  save(); toast('Purchase deleted'); router();
 }
 
 /* ---------- Expenses ---------- */
