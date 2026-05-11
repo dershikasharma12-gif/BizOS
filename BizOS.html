@@ -1,0 +1,2153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BizOS — One place to run your business</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter','system-ui','sans-serif'],
+        mono: ['JetBrains Mono','ui-monospace','monospace']
+      },
+      colors: {
+        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'}
+      },
+      boxShadow: {
+        soft: '0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06)',
+        pop: '0 10px 40px rgba(15,23,42,.12)'
+      }
+    }
+  }
+};
+</script>
+<style>
+  html,body{font-family:'Inter',system-ui,sans-serif;}
+  .num{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+  .scroll-thin::-webkit-scrollbar{width:8px;height:8px}
+  .scroll-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+  .dark .scroll-thin::-webkit-scrollbar-thumb{background:#334155}
+  .fade-in{animation:fade .25s ease-out}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .pop-in{animation:pop .2s ease-out}
+  @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+  .hover-lift{transition:transform .15s ease, box-shadow .15s ease}
+  .hover-lift:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(15,23,42,.08)}
+  .nav-active{background:linear-gradient(90deg, rgba(99,102,241,.12), rgba(124,58,237,.06)); color:#4f46e5}
+  .dark .nav-active{background:linear-gradient(90deg, rgba(99,102,241,.18), rgba(124,58,237,.10)); color:#a5b4fc}
+  .kbd{font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;padding:1px 6px;border-radius:6px;color:#475569}
+  .dark .kbd{background:#0f172a;border-color:#334155;color:#cbd5e1}
+  .row-hover:hover{background:#f8fafc}
+  .dark .row-hover:hover{background:#0f172a}
+  .skel{background:linear-gradient(90deg,#f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:99px;margin-right:6px;background:currentColor;vertical-align:middle}
+  @media print{
+    body *{visibility:hidden}
+    #print-area, #print-area *{visibility:visible}
+    #print-area{position:absolute;inset:0;padding:24px;background:white;color:black}
+    .no-print{display:none !important}
+  }
+  /* Toast */
+  .toast{animation:toastIn .25s ease-out}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  /* Glass */
+  .glass{backdrop-filter:saturate(140%) blur(8px); background:rgba(255,255,255,.7)}
+  .dark .glass{background:rgba(10,10,11,.6)}
+</style>
+</head>
+<body class="bg-stone-50 dark:bg-[#0a0a0b] text-stone-900 dark:text-stone-100 antialiased">
+
+<!-- ============= APP SHELL ============= -->
+<div id="app" class="min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="hidden md:flex w-64 shrink-0 flex-col border-r border-stone-200 dark:border-stone-800 bg-white dark:bg-[#0f0f10] sticky top-0 h-screen">
+    <div class="px-5 pt-5 pb-4 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center text-white font-bold shadow-soft">B</div>
+      <div>
+        <div class="font-bold tracking-tight">BizOS</div>
+        <div class="text-[11px] text-stone-500 dark:text-stone-400">Run everything. One app.</div>
+      </div>
+    </div>
+    <div class="px-3 mt-2 mb-2">
+      <button onclick="openCmdK()" class="w-full text-left flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-900">
+        <i data-lucide="search" class="w-4 h-4"></i> Search…
+        <span class="ml-auto kbd">⌘K</span>
+      </button>
+    </div>
+    <nav id="nav" class="px-2 py-2 flex-1 overflow-y-auto scroll-thin space-y-0.5 text-sm"></nav>
+    <div class="border-t border-stone-200 dark:border-stone-800 p-3">
+      <button onclick="toggleDark()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900 text-sm">
+        <i data-lucide="moon-star" class="w-4 h-4"></i><span class="dark:hidden">Dark mode</span><span class="hidden dark:inline">Light mode</span>
+      </button>
+      <div class="px-3 pt-2 pb-1 flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xs font-semibold">A</div>
+        <div class="text-xs">
+          <div class="font-medium">Appu</div>
+          <div class="text-stone-500">Owner · Main Branch</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 min-w-0 flex flex-col">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 glass border-b border-stone-200 dark:border-stone-800">
+      <div class="px-4 md:px-6 h-14 flex items-center gap-3">
+        <button class="md:hidden p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div id="crumbs" class="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400"></div>
+        <div id="liveClock" class="hidden md:flex items-center gap-1.5 text-xs text-stone-500 num ml-3 px-2.5 py-1 rounded-md bg-stone-100/60 dark:bg-stone-800/60"></div>
+        <div id="userBadge" class="ml-auto"></div>
+        <div class="flex items-center gap-2">
+          <button onclick="openCmdK()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800 text-xs text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-900">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i> Search <span class="kbd ml-2">⌘K</span>
+          </button>
+          <div class="relative" id="newMenuWrap">
+            <button onclick="toggleNewMenu()" class="px-3 py-1.5 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-medium flex items-center gap-1.5 hover:opacity-90"><i data-lucide="plus" class="w-4 h-4"></i> New</button>
+            <div id="newMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-xl shadow-pop p-1.5 z-30 pop-in"></div>
+          </div>
+          <button id="copilotBtn" onclick="toggleCopilot()" class="px-3 py-1.5 rounded-lg border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-sm font-medium flex items-center gap-1.5 hover:bg-brand-100 dark:hover:bg-brand-900/50"><i data-lucide="sparkles" class="w-4 h-4"></i> Co-Pilot</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="view" class="flex-1 px-4 md:px-6 py-6 fade-in"></div>
+
+    <footer class="px-6 py-4 text-xs text-stone-500 border-t border-stone-200 dark:border-stone-800 flex flex-wrap justify-between gap-2">
+      <div>BizOS v1.1 · Saved locally · <span id="footClock" class="num"></span></div>
+      <div id="footActions" class="flex gap-3"></div>
+    </footer>
+  </main>
+
+  <!-- Co-Pilot Drawer -->
+  <aside id="copilot" class="fixed top-0 right-0 h-screen w-full md:w-[380px] bg-white dark:bg-[#0f0f10] border-l border-stone-200 dark:border-stone-800 shadow-pop translate-x-full transition-transform duration-300 z-40 flex flex-col">
+    <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center gap-2">
+      <i data-lucide="sparkles" class="w-4 h-4 text-brand-600"></i>
+      <div class="font-semibold">AI Co-Pilot</div>
+      <button onclick="toggleCopilot()" class="ml-auto p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div id="copilotChat" class="flex-1 overflow-y-auto scroll-thin p-4 space-y-3 text-sm"></div>
+    <div class="p-3 border-t border-stone-200 dark:border-stone-800">
+      <div class="flex flex-wrap gap-1.5 mb-2">
+        <button class="text-xs px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-900 hover:bg-stone-200" onclick="askCopilot('What was my best selling item this month?')">Best seller?</button>
+        <button class="text-xs px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-900 hover:bg-stone-200" onclick="askCopilot('Show me low stock items')">Low stock</button>
+        <button class="text-xs px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-900 hover:bg-stone-200" onclick="askCopilot('Total sales today')">Today</button>
+        <button class="text-xs px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-900 hover:bg-stone-200" onclick="askCopilot('Who owes me money?')">Receivables</button>
+      </div>
+      <form onsubmit="event.preventDefault(); const i=document.getElementById('copilotInput'); if(i.value.trim()){askCopilot(i.value); i.value=''}">
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-800 focus-within:border-brand-400">
+          <input id="copilotInput" placeholder="Ask anything about your business…" class="flex-1 bg-transparent outline-none text-sm" />
+          <button class="text-brand-600 p-1 rounded-md"><i data-lucide="send-horizontal" class="w-4 h-4"></i></button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Command Palette -->
+  <div id="cmdK" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4" onclick="if(event.target===this) closeCmdK()">
+    <div class="w-full max-w-xl bg-white dark:bg-[#141416] rounded-2xl shadow-pop border border-stone-200 dark:border-stone-800 overflow-hidden pop-in">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-stone-200 dark:border-stone-800">
+        <i data-lucide="search" class="w-4 h-4 text-stone-400"></i>
+        <input id="cmdKInput" placeholder="Search products, customers, invoices, or run an action…" class="flex-1 bg-transparent outline-none text-sm" oninput="renderCmdK()" />
+        <span class="kbd">esc</span>
+      </div>
+      <div id="cmdKResults" class="max-h-80 overflow-y-auto scroll-thin p-2 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- Modal mount -->
+  <div id="modalMount"></div>
+  <!-- Toast mount -->
+  <div id="toasts" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+  <!-- Print mount -->
+  <div id="print-area"></div>
+</div>
+
+<script>
+/* =====================================================================
+   BizOS — single-file SPA
+   ===================================================================== */
+
+/* ---------- Storage & Seed ---------- */
+const KEY='bizos.v1';
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const uid=(p='')=> p+Math.random().toString(36).slice(2,9);
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null} }
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function seed(){
+  const today=new Date();
+  const daysAgo=n=>{const d=new Date(today);d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)};
+  const products=[
+    {id:uid('p_'),sku:'SKU-1001',name:'Premium A4 Paper Ream',category:'Stationery',cost:280,price:340,stock:120,reorder:30,tax:18,unit:'Ream',hsn:'4802',img:'📄'},
+    {id:uid('p_'),sku:'SKU-1002',name:'Ballpoint Pen (Blue, 10-pack)',category:'Stationery',cost:85,price:120,stock:240,reorder:50,tax:12,unit:'Pack',hsn:'9608',img:'🖊️'},
+    {id:uid('p_'),sku:'SKU-1003',name:'Wireless Mouse',category:'Electronics',cost:540,price:799,stock:45,reorder:15,tax:18,unit:'Pcs',hsn:'8471',img:'🖱️'},
+    {id:uid('p_'),sku:'SKU-1004',name:'USB-C Cable 1m',category:'Electronics',cost:140,price:249,stock:8,reorder:25,tax:18,unit:'Pcs',hsn:'8544',img:'🔌'},
+    {id:uid('p_'),sku:'SKU-1005',name:'Notebook A5 (200pg)',category:'Stationery',cost:60,price:99,stock:300,reorder:80,tax:12,unit:'Pcs',hsn:'4820',img:'📓'},
+    {id:uid('p_'),sku:'SKU-1006',name:'Stapler Heavy Duty',category:'Stationery',cost:320,price:499,stock:22,reorder:10,tax:18,unit:'Pcs',hsn:'8305',img:'📎'},
+    {id:uid('p_'),sku:'SKU-1007',name:'Mechanical Keyboard',category:'Electronics',cost:2200,price:3299,stock:14,reorder:5,tax:18,unit:'Pcs',hsn:'8471',img:'⌨️'},
+    {id:uid('p_'),sku:'SKU-1008',name:'Sticky Notes (Pack of 5)',category:'Stationery',cost:90,price:149,stock:180,reorder:40,tax:12,unit:'Pack',hsn:'4820',img:'🗒️'},
+    {id:uid('p_'),sku:'SKU-1009',name:'Office Chair Mesh',category:'Furniture',cost:4200,price:6499,stock:5,reorder:3,tax:18,unit:'Pcs',hsn:'9401',img:'🪑'},
+    {id:uid('p_'),sku:'SKU-1010',name:'Desk Lamp LED',category:'Electronics',cost:680,price:999,stock:18,reorder:8,tax:18,unit:'Pcs',hsn:'9405',img:'💡'},
+    {id:uid('p_'),sku:'SKU-1011',name:'Whiteboard Marker (Set 4)',category:'Stationery',cost:120,price:199,stock:90,reorder:30,tax:12,unit:'Set',hsn:'9608',img:'🖍️'},
+    {id:uid('p_'),sku:'SKU-1012',name:'Power Bank 20000mAh',category:'Electronics',cost:1100,price:1699,stock:25,reorder:10,tax:18,unit:'Pcs',hsn:'8507',img:'🔋'}
+  ];
+  const customers=[
+    {id:uid('c_'),name:'Ramesh Traders',type:'Online',phone:'+91 98200 11111',email:'ramesh@traders.in',gstin:'27AABCR1234M1Z2',address:'Mumbai, MH',balance:0,credit:50000,since:daysAgo(420)},
+    {id:uid('c_'),name:'Aditi Kumar',type:'Walk-in',phone:'+91 99877 22222',email:'aditi@gmail.com',gstin:'',address:'Pune, MH',balance:0,credit:10000,since:daysAgo(180)},
+    {id:uid('c_'),name:'Bright Schools Co.',type:'Online',phone:'+91 91022 33333',email:'po@bright.edu',gstin:'29AAACB7890N1Z3',address:'Bengaluru, KA',balance:0,credit:200000,since:daysAgo(95)},
+    {id:uid('c_'),name:'Walk-in Customer',type:'Walk-in',phone:'',email:'',gstin:'',address:'',balance:0,credit:0,since:daysAgo(1)},
+    {id:uid('c_'),name:'Sharma Stationery',type:'Walk-in',phone:'+91 90011 44444',email:'sharma@stationery.in',gstin:'07AAACS5678P1Z4',address:'Delhi, DL',balance:0,credit:80000,since:daysAgo(260)}
+  ];
+  const suppliers=[
+    {id:uid('s_'),name:'Paperline Mills',phone:'+91 90000 11111',email:'sales@paperline.in',gstin:'27AAACP1111M1Z2',address:'Surat, GJ',balance:0,terms:'Net 30',rating:4.6},
+    {id:uid('s_'),name:'TechWholesale Pvt Ltd',phone:'+91 90000 22222',email:'orders@techws.in',gstin:'29AAACT2222N1Z3',address:'Bengaluru, KA',balance:0,terms:'Net 45',rating:4.2},
+    {id:uid('s_'),name:'OfficeMate Distributors',phone:'+91 90000 33333',email:'hello@officemate.in',gstin:'07AAACO3333O1Z4',address:'Gurgaon, HR',balance:0,terms:'Net 15',rating:4.8}
+  ];
+  // Random sales over last 30 days
+  const invoices=[]; let invNum=1001;
+  for(let d=29;d>=0;d--){
+    const date=daysAgo(d);
+    const count=2+Math.floor(Math.random()*4);
+    for(let i=0;i<count;i++){
+      const cust=customers[Math.floor(Math.random()*customers.length)];
+      const lineCount=1+Math.floor(Math.random()*4);
+      const lines=[];
+      for(let j=0;j<lineCount;j++){
+        const p=products[Math.floor(Math.random()*products.length)];
+        const qty=1+Math.floor(Math.random()*5);
+        lines.push({pid:p.id,sku:p.sku,name:p.name,qty,price:p.price,cost:p.cost,tax:p.tax,disc:0});
+      }
+      const sub=lines.reduce((s,l)=>s+l.qty*l.price,0);
+      const tax=lines.reduce((s,l)=>s+l.qty*l.price*l.tax/100,0);
+      invoices.push({
+        id:uid('inv_'),
+        number:'INV-'+(invNum++),
+        date,
+        dueDate:date,
+        customerId:cust.id,
+        lines,
+        subtotal:sub,
+        discount:0,
+        tax,
+        total:Math.round(sub+tax),
+        paid:Math.round(sub+tax),
+        status:'paid',
+        payment:['Cash','Card','UPI','Bank'][Math.floor(Math.random()*4)],
+        notes:''
+      });
+    }
+  }
+  // A couple of unpaid
+  invoices[invoices.length-1].paid=0; invoices[invoices.length-1].status='unpaid';
+  invoices[invoices.length-3].paid=0; invoices[invoices.length-3].status='unpaid';
+
+  const purchases=[
+    {id:uid('po_'),number:'BILL-2001',date:daysAgo(20),supplierId:suppliers[0].id,lines:[{pid:products[0].id,sku:products[0].sku,name:products[0].name,qty:50,price:280,tax:18}],subtotal:14000,tax:2520,total:16520,paid:16520,status:'paid'},
+    {id:uid('po_'),number:'BILL-2002',date:daysAgo(12),supplierId:suppliers[1].id,lines:[{pid:products[2].id,sku:products[2].sku,name:products[2].name,qty:20,price:540,tax:18},{pid:products[6].id,sku:products[6].sku,name:products[6].name,qty:5,price:2200,tax:18}],subtotal:21800,tax:3924,total:25724,paid:0,status:'unpaid'},
+    {id:uid('po_'),number:'BILL-2003',date:daysAgo(5),supplierId:suppliers[2].id,lines:[{pid:products[1].id,sku:products[1].sku,name:products[1].name,qty:100,price:85,tax:12}],subtotal:8500,tax:1020,total:9520,paid:9520,status:'paid'}
+  ];
+  const expenses=[
+    {id:uid('e_'),date:daysAgo(2),category:'Rent',amount:25000,note:'Shop rent — May',method:'Bank'},
+    {id:uid('e_'),date:daysAgo(4),category:'Utilities',amount:3400,note:'Electricity bill',method:'UPI'},
+    {id:uid('e_'),date:daysAgo(7),category:'Salary',amount:48000,note:'Staff salary — Apr',method:'Bank'},
+    {id:uid('e_'),date:daysAgo(15),category:'Internet',amount:1200,note:'Broadband',method:'UPI'},
+    {id:uid('e_'),date:daysAgo(22),category:'Misc',amount:850,note:'Tea & snacks',method:'Cash'}
+  ];
+  return {
+    org:{name:'Demo Stationers & Co.',address:'12 Main Street, Pune 411001, India',phone:'+91 98765 43210',email:'hello@demostationers.in',gstin:'27AAACD1234M1Z5',currency:'INR',symbol:'₹',taxLabel:'GST',footer:'Thank you for shopping with us!',brand:'#4f46e5'},
+    branch:{id:'b_main',name:'Main Branch'},
+    products,customers,suppliers,invoices,purchases,expenses,
+    payments:[],
+    audit:[],
+    auth:{founderPasswordHash:'',needsSetup:true,session:null},
+    team:[],
+    settings:{darkMode:false,template:'modern'}
+  };
+}
+
+let state = load() || seed();
+// Robust migration so older saved data can't break newer code
+function migrate(s){
+  const def=seed();
+  for(const k of Object.keys(def)) if(s[k]===undefined) s[k]=def[k];
+  if(!s.auth) s.auth={founderPasswordHash:'',needsSetup:true,session:null};
+  if(s.auth.needsSetup===undefined) s.auth.needsSetup = !s.auth.founderPasswordHash;
+  if(!s.team) s.team=[];
+  if(!s.org) s.org=def.org;
+  if(!s.settings) s.settings={darkMode:false,template:'modern'};
+  if(!s.audit) s.audit=[];
+  if(!s.payments) s.payments=[];
+  // Default any customer without a type
+  (s.customers||[]).forEach(c=>{ if(!c.type) c.type = c.name?.toLowerCase().includes('walk') ? 'Walk-in' : 'Walk-in'; });
+  return s;
+}
+// Reusable customer-type badge HTML
+function custTypeBadge(type){
+  const t=type||'Walk-in';
+  if(t==='Online') return '<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 font-medium"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>Online</span>';
+  return '<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-medium"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>Walk-in</span>';
+}
+state=migrate(state);
+if(state.settings?.darkMode) document.documentElement.classList.add('dark');
+
+// Global error surface — make any silent JS error visible
+window.addEventListener('error',(e)=>{
+  console.error('BizOS error:',e.error||e.message);
+  try{ toast('Error: '+(e.message||'see console'),'err'); }catch(_){}
+});
+window.addEventListener('unhandledrejection',(e)=>{
+  console.error('BizOS promise rejection:',e.reason);
+  try{ toast('Error: '+(e.reason?.message||e.reason||'see console'),'err'); }catch(_){}
+});
+
+/* ---------- Auth ---------- */
+function fallbackHash(s){
+  // Simple deterministic hash for environments where crypto.subtle is unavailable (e.g. some file:// contexts)
+  let h1=0x811c9dc5, h2=0xdeadbeef;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return 'fb_'+(h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0');
+}
+async function hashPwd(p){
+  const salted=p+'::bizos.salt';
+  try{
+    if(window.crypto && crypto.subtle && crypto.subtle.digest){
+      const enc=new TextEncoder().encode(salted);
+      const buf=await crypto.subtle.digest('SHA-256',enc);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){ console.warn('crypto.subtle unavailable, using fallback hash',e); }
+  return fallbackHash(salted);
+}
+const isAuthed=()=> !!state.auth?.session;
+const role=()=> state.auth?.session?.role || null;
+const currentUser=()=> state.auth?.session?.name || '';
+const isFounder=()=> role()==='founder';
+const isTeam=()=> role()==='team';
+function logout(){ state.auth.session=null; save(); location.hash='#/login'; router(); toast('Logged out','info'); }
+async function loginFounder(pwd){
+  const h=await hashPwd(pwd);
+  if(h===state.auth.founderPasswordHash){
+    state.auth.session={role:'founder',name:'Founder',since:Date.now()};
+    save(); location.hash='#/dashboard'; router(); toast('Welcome back, Founder');
+  } else { toast('Incorrect password','err'); }
+}
+function loginTeam(memberId){
+  const m=state.team.find(t=>t.id===memberId); if(!m) return;
+  state.auth.session={role:'team',name:m.name,userId:m.id,since:Date.now()};
+  save(); location.hash='#/sales/new'; router(); toast('Hi '+m.name+'!');
+}
+async function setupFounder(pwd){
+  state.auth.founderPasswordHash=await hashPwd(pwd);
+  state.auth.needsSetup=false;
+  // Add a default team member so team login is usable
+  if(!state.team.length) state.team.push({id:uid('u_'),name:'Cashier 1'});
+  save(); toast('Setup complete'); router();
+}
+async function changeFounderPwd(oldP,newP){
+  const h=await hashPwd(oldP);
+  if(h!==state.auth.founderPasswordHash){ toast('Old password wrong','err'); return; }
+  state.auth.founderPasswordHash=await hashPwd(newP); save(); toast('Password changed');
+}
+
+/* ---------- Helpers ---------- */
+const SYM=()=>state.org.symbol||'₹';
+const fmt=(n)=> (n<0?'-':'')+SYM()+Math.abs(Math.round(n)).toLocaleString('en-IN');
+const fmtN=(n)=>Math.round(n).toLocaleString('en-IN');
+const dateNice=d=>new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+const findCust=id=>state.customers.find(c=>c.id===id);
+const findProd=id=>state.products.find(p=>p.id===id);
+const findSupp=id=>state.suppliers.find(s=>s.id===id);
+
+function toast(msg, kind='ok'){
+  const el=document.createElement('div');
+  const colors={ok:'border-emerald-200 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-200',err:'border-rose-200 bg-rose-50 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200',info:'border-stone-200 bg-white text-stone-800 dark:bg-stone-900 dark:text-stone-100'};
+  el.className='toast px-4 py-2.5 rounded-xl border shadow-soft text-sm flex items-center gap-2 '+colors[kind];
+  el.innerHTML=`<i data-lucide="${kind==='ok'?'check-circle':kind==='err'?'alert-circle':'info'}" class="w-4 h-4"></i>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  lucide.createIcons();
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),200)},2400);
+}
+
+function toggleDark(){ state.settings.darkMode=!state.settings.darkMode; document.documentElement.classList.toggle('dark', state.settings.darkMode); save(); }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('hidden'); }
+function tickClock(){
+  const d=new Date();
+  const time=d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  const date=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  const el=document.getElementById('liveClock');
+  if(el) el.innerHTML = `<i data-lucide="clock" class="w-3 h-3"></i><span>${date} · ${time}</span>`;
+  const lc=document.getElementById('loginClock');
+  if(lc) lc.textContent = date+' · '+time;
+  const fc=document.getElementById('footClock');
+  if(fc) fc.textContent = time;
+  if(el) lucide.createIcons();
+}
+function renderFooterActions(){
+  const el=document.getElementById('footActions');
+  if(!el) return;
+  el.innerHTML = isFounder()
+    ? `<button class="hover:underline" onclick="exportData()">Backup</button> · <button class="hover:underline" onclick="importData()">Restore</button> · <button class="hover:underline" onclick="resetSeed()">Reset demo</button>`
+    : `<span>Logged in as ${currentUser()}</span>`;
+}
+function renderTopbarUser(){
+  const el=document.getElementById('userBadge');
+  if(!el) return;
+  // toggle Co-Pilot button visibility (founder-only feature)
+  const cb=document.getElementById('copilotBtn');
+  if(cb) cb.style.display = isFounder() ? '' : 'none';
+  if(!isAuthed()){ el.innerHTML=''; return; }
+  const f=isFounder();
+  el.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium ${f?'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300':'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'}">
+        <i data-lucide="${f?'shield':'user'}" class="w-3 h-3"></i>${f?'Founder':currentUser()}
+      </span>
+      <button onclick="logout()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+    </div>`;
+  lucide.createIcons();
+}
+function toggleNewMenu(){
+  const m=document.getElementById('newMenu');
+  if(!m) return;
+  if(m.classList.contains('hidden')){
+    const items = isFounder() ? [
+      {l:'New Bill / Sale',i:'receipt-text',fn:"go('#/sales/new')"},
+      {l:'Product',i:'package-plus',fn:"go('#/inventory'); setTimeout(()=>openProductModal(),100)"},
+      {l:'Customer',i:'user-plus',fn:"go('#/customers'); setTimeout(()=>openCustomerModal(),100)"},
+      {l:'Supplier',i:'truck',fn:"go('#/suppliers'); setTimeout(()=>openSupplierModal(),100)"},
+      {l:'Expense',i:'banknote',fn:"go('#/expenses'); setTimeout(()=>openExpenseModal(),100)"},
+      {l:'Purchase Bill',i:'shopping-bag',fn:"go('#/purchases'); setTimeout(()=>openPurchaseModal(),100)"}
+    ] : [
+      {l:'New Bill',i:'receipt-text',fn:"go('#/sales/new')"}
+    ];
+    m.innerHTML = items.map(it=>`<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 text-sm flex items-center gap-2" onclick="${it.fn}; toggleNewMenu()"><i data-lucide="${it.i}" class="w-4 h-4"></i> ${it.l}</button>`).join('');
+    lucide.createIcons();
+  }
+  m.classList.toggle('hidden');
+}
+document.addEventListener('click',(e)=>{ const m=document.getElementById('newMenu'); if(m && !m.classList.contains('hidden') && !e.target.closest('#newMenu') && !e.target.closest('button')) m.classList.add('hidden')});
+
+function toggleCopilot(){
+  const el=document.getElementById('copilot');
+  const open=el.classList.contains('translate-x-full');
+  el.classList.toggle('translate-x-full');
+  if(open && !document.getElementById('copilotChat').children.length) askCopilot('Hi! What can you do?');
+}
+
+/* ---------- Routing ---------- */
+const routes=[
+  {hash:'#/dashboard', label:'Dashboard', icon:'layout-dashboard', render:viewDashboard, roles:['founder']},
+  {hash:'#/sales', label:'Sales', icon:'receipt-text', render:viewSales, roles:['founder']},
+  {hash:'#/sales/new', label:'New Bill', icon:'plus-square', hide:true, render:viewNewInvoice, roles:['founder','team']},
+  {hash:'#/team-pos', label:'Home', icon:'home', render:viewTeamHome, roles:['team']},
+  {hash:'#/team-bills', label:"Today's Bills", icon:'receipt', render:viewTeamBills, roles:['team']},
+  {hash:'#/inventory', label:'Inventory', icon:'package', render:viewInventory, roles:['founder','team']},
+  {hash:'#/customers', label:'Customers', icon:'users', render:viewCustomers, roles:['founder']},
+  {hash:'#/suppliers', label:'Suppliers', icon:'truck', render:viewSuppliers, roles:['founder']},
+  {hash:'#/purchases', label:'Purchases', icon:'shopping-bag', render:viewPurchases, roles:['founder']},
+  {hash:'#/expenses', label:'Expenses', icon:'banknote', render:viewExpenses, roles:['founder']},
+  {hash:'#/reports', label:'Reports', icon:'bar-chart-3', render:viewReports, roles:['founder']},
+  {hash:'#/settings', label:'Settings', icon:'settings', render:viewSettings, roles:['founder','team']}
+];
+function renderNav(){
+  const cur=location.hash||'#/dashboard';
+  const r0=role();
+  document.getElementById('nav').innerHTML = routes.filter(r=>!r.hide && (!r.roles || (r0 && r.roles.includes(r0)))).map(r=>`
+    <a href="${r.hash}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg ${cur.startsWith(r.hash)?'nav-active font-medium':'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-900'}">
+      <i data-lucide="${r.icon}" class="w-4 h-4"></i> ${r.label}
+    </a>`).join('');
+  lucide.createIcons();
+}
+function go(hash){ location.hash=hash; }
+function showAppShell(show){
+  document.getElementById('sidebar').style.display = show ? '' : 'none';
+  document.querySelector('header').style.display = show ? '' : 'none';
+  document.querySelector('footer').style.display = show ? '' : 'none';
+}
+function router(){
+  // Setup gate
+  if(state.auth?.needsSetup){
+    showAppShell(false);
+    document.getElementById('view').innerHTML = viewSetup();
+    document.getElementById('view').className='flex-1 fade-in';
+    lucide.createIcons();
+    return;
+  }
+  // Auth gate
+  if(!isAuthed()){
+    showAppShell(false);
+    document.getElementById('view').innerHTML = viewLogin();
+    document.getElementById('view').className='flex-1 fade-in';
+    lucide.createIcons();
+    return;
+  }
+  showAppShell(true);
+  document.getElementById('view').className='flex-1 px-4 md:px-6 py-6 fade-in';
+  // Default landing per role
+  if(!location.hash){ location.hash = isFounder() ? '#/dashboard' : '#/team-pos'; return; }
+  const cur=location.hash;
+  // 1) Try exact match first (so '#/sales/new' isn't swallowed by '#/sales')
+  let r = routes.find(rt => cur === rt.hash);
+  // 2) Fall back to prefix match — but require longer than the cur hash's prefix
+  if(!r) r = routes.find(rt => rt.hash.length>2 && cur.startsWith(rt.hash+'/'));
+  // 3) Role permission check
+  if(r && r.roles && !r.roles.includes(role())){
+    location.hash = isFounder() ? '#/dashboard' : '#/team-pos';
+    return;
+  }
+  document.getElementById('crumbs').innerHTML = r ? `<i data-lucide="${r.icon}" class="w-4 h-4"></i><span class="text-stone-900 dark:text-stone-100 font-medium">${r.label}</span>` : '';
+  renderNav();
+  document.getElementById('view').innerHTML = r ? r.render() : '<div>Not found</div>';
+  lucide.createIcons();
+  if(r && r.after) r.after();
+  if(window._afterRender){ window._afterRender(); window._afterRender=null; }
+  window.scrollTo({top:0,behavior:'instant'});
+  renderTopbarUser();
+  renderFooterActions();
+}
+window.addEventListener('hashchange', router);
+
+/* ---------- Computed ---------- */
+const sumDue=()=> state.invoices.filter(i=>i.status==='unpaid').reduce((s,i)=>s+(i.total-i.paid),0);
+const sumPayables=()=> state.purchases.filter(p=>p.status==='unpaid').reduce((s,p)=>s+(p.total-p.paid),0);
+const todaySales=()=> state.invoices.filter(i=>i.date===todayISO()).reduce((s,i)=>s+i.total,0);
+const todayProfit=()=> state.invoices.filter(i=>i.date===todayISO()).reduce((s,i)=>s+i.lines.reduce((x,l)=>x+(l.price-l.cost)*l.qty,0),0);
+const lowStock=()=> state.products.filter(p=>p.stock<=p.reorder);
+const cashIn=()=>{
+  const sales=state.invoices.reduce((s,i)=>s+i.paid,0);
+  const exp=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const purch=state.purchases.reduce((s,p)=>s+p.paid,0);
+  return sales-exp-purch;
+};
+const last7Days=()=>{
+  const arr=[]; for(let d=6;d>=0;d--){
+    const day=new Date(); day.setDate(day.getDate()-d);
+    const k=day.toISOString().slice(0,10);
+    const t=state.invoices.filter(i=>i.date===k).reduce((s,i)=>s+i.total,0);
+    arr.push({date:k,label:day.toLocaleDateString('en-IN',{weekday:'short'}),value:t});
+  } return arr;
+};
+
+/* ---------- Views ---------- */
+
+function viewSetup(){
+  return `
+  <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-stone-50 via-white to-brand-50 dark:from-[#0a0a0b] dark:via-[#0f0f10] dark:to-[#0a0a0b]">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <div class="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 text-white items-center justify-center font-bold text-xl shadow-pop mb-3">B</div>
+        <h1 class="text-2xl font-bold tracking-tight">Welcome to BizOS</h1>
+        <p class="text-sm text-stone-500 mt-1">Set a founder password to protect private business data</p>
+      </div>
+      <form onsubmit="event.preventDefault(); doSetup()" class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-pop p-6 space-y-4">
+        <div>
+          <label class="text-xs font-medium text-stone-500">New founder password</label>
+          <input id="setPwd1" type="password" required minlength="4" placeholder="At least 4 characters" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-stone-500">Confirm password</label>
+          <input id="setPwd2" type="password" required minlength="4" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" />
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-200 flex gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 mt-0.5 shrink-0"></i>
+          <div>This password unlocks customer details, accounts, suppliers, expenses, and reports. Team members get only inventory + billing.</div>
+        </div>
+        <button type="submit" class="w-full px-4 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm">Set up & continue</button>
+      </form>
+      <div class="text-center text-[11px] text-stone-400 mt-4">All data stays on this device. No servers. No accounts.</div>
+    </div>
+  </div>`;
+}
+async function doSetup(){
+  try{
+    const a=document.getElementById('setPwd1').value, b=document.getElementById('setPwd2').value;
+    if(a!==b){ toast('Passwords do not match','err'); return; }
+    if(a.length<4){ toast('At least 4 characters','err'); return; }
+    state.auth.founderPasswordHash = await hashPwd(a);
+    state.auth.needsSetup=false;
+    if(!state.team.length) state.team.push({id:uid('u_'),name:'Cashier 1'});
+    state.auth.session={role:'founder',name:'Founder',since:Date.now()};
+    save();
+    location.hash='#/dashboard'; router(); toast('Welcome to BizOS!');
+  }catch(e){ console.error(e); toast('Setup failed: '+(e.message||e),'err'); }
+}
+
+function viewLogin(){
+  const members=state.team||[];
+  return `
+  <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-stone-50 via-white to-brand-50 dark:from-[#0a0a0b] dark:via-[#0f0f10] dark:to-[#0a0a0b]">
+    <div class="w-full max-w-3xl">
+      <div class="text-center mb-6">
+        <div class="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 text-white items-center justify-center font-bold text-xl shadow-pop mb-3">B</div>
+        <h1 class="text-2xl font-bold tracking-tight">${state.org.name}</h1>
+        <p class="text-sm text-stone-500 mt-1" id="loginClock"></p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-pop p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white flex items-center justify-center"><i data-lucide="shield" class="w-5 h-5"></i></div>
+            <div>
+              <div class="font-semibold">Founder access</div>
+              <div class="text-xs text-stone-500">Full business control</div>
+            </div>
+          </div>
+          <form onsubmit="event.preventDefault(); doFounderLogin()" class="space-y-3">
+            <div>
+              <label class="text-xs font-medium text-stone-500">Password</label>
+              <input id="founderPwd" type="password" required class="mt-1 w-full px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" autofocus />
+            </div>
+            <button class="w-full px-4 py-2.5 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 font-medium text-sm">Unlock</button>
+          </form>
+          <div class="mt-3 text-[11px] text-stone-500">Sees customers · accounts · expenses · reports · suppliers · settings</div>
+        </div>
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-pop p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+            <div>
+              <div class="font-semibold">Team member</div>
+              <div class="text-xs text-stone-500">Bills + inventory only</div>
+            </div>
+          </div>
+          ${members.length===0
+            ? `<div class="text-xs text-stone-500 p-3 bg-stone-50 dark:bg-stone-900 rounded-xl">No team members yet. Founder can add them in Settings.</div>`
+            : `<div class="grid grid-cols-2 gap-2">${members.map(m=>`
+                <button onclick="loginTeam('${m.id}')" class="hover-lift p-3 rounded-xl border border-stone-200 dark:border-stone-800 text-left hover:border-brand-300">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xs font-semibold mb-2">${m.name[0].toUpperCase()}</div>
+                  <div class="text-sm font-medium truncate">${m.name}</div>
+                  <div class="text-[11px] text-stone-500">Tap to enter</div>
+                </button>`).join('')}</div>`
+          }
+          <div class="mt-3 text-[11px] text-stone-500">Sees inventory · creates bills · prints / shares receipts</div>
+        </div>
+      </div>
+      <div class="text-center text-[11px] text-stone-400 mt-6">BizOS · runs on any device · your data stays here</div>
+    </div>
+  </div>`;
+}
+async function doFounderLogin(){
+  try{
+    const p=document.getElementById('founderPwd').value;
+    if(!p){ toast('Enter password','err'); return; }
+    await loginFounder(p);
+  }catch(e){ console.error(e); toast('Login failed: '+(e.message||e),'err'); }
+}
+
+function viewTeamHome(){
+  const myBillsToday = state.invoices.filter(i=>i.date===todayISO() && i.createdBy===currentUser());
+  const totalToday = myBillsToday.reduce((s,i)=>s+i.total,0);
+  return `
+  <div class="space-y-5">
+    <div class="bg-gradient-to-br from-brand-600 via-violet-600 to-fuchsia-600 text-white rounded-2xl p-6 shadow-pop relative overflow-hidden">
+      <div class="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+      <div class="relative">
+        <div class="text-xs uppercase tracking-wider opacity-80">Hi ${currentUser()} 👋</div>
+        <h1 class="text-2xl font-bold tracking-tight mt-1">Ready to bill?</h1>
+        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div><div class="opacity-80 text-xs">Bills today</div><div class="num text-2xl font-bold">${myBillsToday.length}</div></div>
+          <div><div class="opacity-80 text-xs">Total billed</div><div class="num text-2xl font-bold">${fmt(totalToday)}</div></div>
+        </div>
+        <div class="mt-5 flex flex-col sm:flex-row gap-2">
+          <button onclick="go('#/sales/new')" class="px-5 py-3 rounded-xl bg-white text-stone-900 text-sm font-semibold flex items-center justify-center gap-2 hover-lift"><i data-lucide="plus" class="w-4 h-4"></i> New bill</button>
+          <button onclick="go('#/sales/new'); setTimeout(()=>startBarcodeScan(),300)" class="px-5 py-3 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur text-white text-sm font-semibold flex items-center justify-center gap-2 border border-white/30"><i data-lucide="scan-line" class="w-4 h-4"></i> Scan & bill</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <a href="#/inventory" class="hover-lift bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft block">
+        <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/40 flex items-center justify-center mb-3"><i data-lucide="package" class="w-5 h-5 text-sky-700 dark:text-sky-300"></i></div>
+        <div class="font-semibold">Check stock</div>
+        <div class="text-xs text-stone-500 mt-0.5">${state.products.length} products available</div>
+      </a>
+      <a href="#/team-bills" class="hover-lift bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft block">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-3"><i data-lucide="receipt" class="w-5 h-5 text-emerald-700 dark:text-emerald-300"></i></div>
+        <div class="font-semibold">My bills today</div>
+        <div class="text-xs text-stone-500 mt-0.5">${myBillsToday.length} bills · re-print or share</div>
+      </a>
+      <button onclick="go('#/sales/new')" class="hover-lift bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft text-left">
+        <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center mb-3"><i data-lucide="zap" class="w-5 h-5 text-violet-700 dark:text-violet-300"></i></div>
+        <div class="font-semibold">Quick checkout</div>
+        <div class="text-xs text-stone-500 mt-0.5">Tap items · pay · share</div>
+      </button>
+    </div>
+    ${myBillsToday.length>0 ? `
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="px-5 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+        <div class="text-sm font-semibold">Recent bills (today)</div>
+        <a href="#/team-bills" class="text-xs text-brand-600 hover:underline">View all →</a>
+      </div>
+      <div class="divide-y divide-stone-100 dark:divide-stone-800">
+        ${myBillsToday.slice(-5).reverse().map(i=>`
+          <div class="row-hover px-5 py-3 flex items-center gap-3 cursor-pointer" onclick="openInvoiceView('${i.id}')">
+            <div class="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500"><i data-lucide="receipt" class="w-4 h-4"></i></div>
+            <div class="min-w-0 flex-1"><div class="text-sm font-medium truncate">${findCust(i.customerId)?.name||'Walk-in'}</div><div class="text-xs text-stone-500 num">${i.number}</div></div>
+            <div class="text-right"><div class="num text-sm font-semibold">${fmt(i.total)}</div><div class="text-[11px] text-stone-500">${i.payment}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+
+function viewTeamBills(){
+  const my = state.invoices.filter(i=>i.date===todayISO() && i.createdBy===currentUser()).sort((a,b)=>(b.id||'').localeCompare(a.id||''));
+  return `
+  <div class="space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">My bills today</h1>
+        <p class="text-stone-500 text-sm">${my.length} bills · ${fmt(my.reduce((s,i)=>s+i.total,0))} total</p>
+      </div>
+      <button onclick="go('#/sales/new')" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> New Bill</button>
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
+            <tr><th class="px-4 py-2.5 text-left">Bill #</th><th class="px-4 py-2.5 text-left">Customer</th><th class="px-4 py-2.5 text-right">Total</th><th class="px-4 py-2.5 text-left">Payment</th><th class="px-4 py-2.5"></th></tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+            ${my.length===0
+              ? '<tr><td colspan="5" class="text-center py-10 text-stone-500 text-sm">No bills yet today — tap "New Bill" to start</td></tr>'
+              : my.map(i=>`<tr class="row-hover cursor-pointer" onclick="openInvoiceView('${i.id}')">
+                  <td class="px-4 py-2.5 num font-medium">${i.number}</td>
+                  <td class="px-4 py-2.5">${findCust(i.customerId)?.name||'Walk-in'}</td>
+                  <td class="px-4 py-2.5 num text-right font-semibold">${fmt(i.total)}</td>
+                  <td class="px-4 py-2.5 text-xs">${i.payment}</td>
+                  <td class="px-4 py-2.5 text-right" onclick="event.stopPropagation()">
+                    <button onclick="printInvoice('${i.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900" title="Print"><i data-lucide="printer" class="w-4 h-4"></i></button>
+                    <button onclick="shareWhatsApp('${i.id}')" class="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600" title="WhatsApp"><i data-lucide="message-circle" class="w-4 h-4"></i></button>
+                  </td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewDashboard(){
+  const tiles=[
+    {label:"Today's Sales", value:fmt(todaySales()), trend:'+12%', icon:'shopping-cart', color:'from-emerald-400 to-teal-500'},
+    {label:"Today's Profit", value:fmt(todayProfit()), trend:'+8%', icon:'trending-up', color:'from-violet-400 to-fuchsia-500'},
+    {label:"Cash + Bank", value:fmt(cashIn()), trend:'', icon:'wallet', color:'from-sky-400 to-blue-600'},
+    {label:"Receivables", value:fmt(sumDue()), trend:state.invoices.filter(i=>i.status==='unpaid').length+' unpaid', icon:'inbox', color:'from-amber-400 to-orange-500'},
+    {label:"Payables", value:fmt(sumPayables()), trend:state.purchases.filter(p=>p.status==='unpaid').length+' bills', icon:'credit-card', color:'from-rose-400 to-pink-500'},
+    {label:"Low Stock", value:lowStock().length, trend:'items', icon:'package-search', color:'from-stone-500 to-stone-700'}
+  ];
+  window._afterRender=()=>{ drawTrendChart(); drawCatChart(); };
+  const recents=[...state.invoices].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  const attention = [
+    ...state.invoices.filter(i=>i.status==='unpaid').slice(0,3).map(i=>({type:'invoice',msg:`${findCust(i.customerId)?.name||'—'} owes ${fmt(i.total-i.paid)}`,go:'#/sales'})),
+    ...lowStock().slice(0,3).map(p=>({type:'stock',msg:`${p.name} — only ${p.stock} ${p.unit} left`,go:'#/inventory'})),
+    ...state.purchases.filter(p=>p.status==='unpaid').slice(0,2).map(p=>({type:'pay',msg:`Pay ${findSupp(p.supplierId)?.name} — ${fmt(p.total-p.paid)}`,go:'#/purchases'}))
+  ];
+  return `
+  <div class="space-y-6">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Good morning, Appu 👋</h1>
+        <p class="text-stone-500 text-sm mt-1">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${state.org.name}</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="go('#/sales/new')" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> New Sale</button>
+        <button onclick="go('#/reports')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-900">View Reports</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      ${tiles.map(t=>`
+        <div class="hover-lift bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${t.color} text-white flex items-center justify-center"><i data-lucide="${t.icon}" class="w-4 h-4"></i></div>
+            ${t.trend?`<span class="text-[11px] text-stone-500">${t.trend}</span>`:''}
+          </div>
+          <div class="text-xs text-stone-500">${t.label}</div>
+          <div class="num text-xl font-semibold tracking-tight mt-0.5">${t.value}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-sm font-semibold">Sales — last 7 days</div>
+            <div class="text-xs text-stone-500">Daily total revenue</div>
+          </div>
+          <div class="text-xs text-stone-500">${fmt(last7Days().reduce((s,d)=>s+d.value,0))} total</div>
+        </div>
+        <div class="h-56"><canvas id="trend"></canvas></div>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+        <div class="text-sm font-semibold mb-3">Sales by Category</div>
+        <div class="h-56"><canvas id="cat"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-5 py-3 flex items-center justify-between border-b border-stone-200 dark:border-stone-800">
+          <div class="text-sm font-semibold">Recent Invoices</div>
+          <a href="#/sales" class="text-xs text-brand-600 hover:underline">View all →</a>
+        </div>
+        <div class="divide-y divide-stone-100 dark:divide-stone-800">
+          ${recents.map(i=>`
+            <div class="row-hover px-5 py-3 flex items-center gap-3 cursor-pointer" onclick="openInvoiceView('${i.id}')">
+              <div class="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500"><i data-lucide="receipt" class="w-4 h-4"></i></div>
+              <div class="min-w-0 flex-1">
+                <div class="text-sm font-medium truncate">${findCust(i.customerId)?.name||'—'}</div>
+                <div class="text-xs text-stone-500">${i.number} · ${dateNice(i.date)} · ${i.payment||'—'}</div>
+              </div>
+              <div class="text-right">
+                <div class="num text-sm font-semibold">${fmt(i.total)}</div>
+                <div class="text-[11px] ${i.status==='paid'?'text-emerald-600':'text-amber-600'} dot">${i.status}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-5 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+          <div class="text-sm font-semibold">Needs your attention</div>
+          <span class="text-xs text-stone-500">${attention.length} items</span>
+        </div>
+        <div class="p-3 space-y-2">
+          ${attention.length===0?'<div class="text-xs text-stone-500 p-3">All caught up ✨</div>':attention.map(a=>`
+            <a href="${a.go}" class="block px-3 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-900 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${a.type==='invoice'?'bg-amber-500':a.type==='stock'?'bg-rose-500':'bg-violet-500'}"></span>
+                ${a.msg}
+              </div>
+            </a>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function drawTrendChart(){
+  const data=last7Days();
+  const ctx=document.getElementById('trend');
+  if(!ctx) return;
+  const grad=ctx.getContext('2d').createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,'rgba(99,102,241,.3)'); grad.addColorStop(1,'rgba(99,102,241,0)');
+  new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.value),borderColor:'#6366f1',backgroundColor:grad,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#6366f1',borderWidth:2}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y)}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(120,113,108,.1)'},ticks:{callback:v=>SYM()+(v/1000).toFixed(0)+'k'}}},maintainAspectRatio:false}});
+}
+function drawCatChart(){
+  const ctx=document.getElementById('cat'); if(!ctx) return;
+  const map={};
+  state.invoices.forEach(i=>i.lines.forEach(l=>{const p=findProd(l.pid); if(!p) return; map[p.category]=(map[p.category]||0)+l.qty*l.price;}));
+  const labels=Object.keys(map), data=Object.values(map);
+  new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['#6366f1','#8b5cf6','#14b8a6','#f59e0b','#ef4444','#0ea5e9'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:8,boxHeight:8,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.parsed)}}},cutout:'65%',maintainAspectRatio:false}});
+}
+
+/* ---------- Sales ---------- */
+function viewSales(){
+  const list=[...state.invoices].sort((a,b)=>b.date.localeCompare(a.date));
+  const totals = list.reduce((s,i)=>{s.total+=i.total; s.paid+=i.paid; s.due+=(i.total-i.paid); return s},{total:0,paid:0,due:0});
+  return `
+  <div class="space-y-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Sales & Invoices</h1>
+        <p class="text-stone-500 text-sm">${list.length} invoices · ${fmt(totals.total)} billed · ${fmt(totals.due)} due</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="go('#/sales/new')" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> New Invoice</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      ${[
+        {l:'Total billed',v:fmt(totals.total),c:'sky'},
+        {l:'Collected',v:fmt(totals.paid),c:'emerald'},
+        {l:'Outstanding',v:fmt(totals.due),c:'amber'}
+      ].map(t=>`<div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+        <div class="text-xs text-stone-500">${t.l}</div>
+        <div class="num text-xl font-semibold mt-1">${t.v}</div>
+      </div>`).join('')}
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex flex-wrap items-center gap-2">
+        <input id="salesSearch" oninput="filterSales()" placeholder="Search by # or customer…" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:border-brand-400 w-full sm:w-72" />
+        <select id="salesStatus" onchange="filterSales()" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none">
+          <option value="">All statuses</option><option>paid</option><option>unpaid</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
+            <tr><th class="px-4 py-2.5 text-left">Invoice</th><th class="px-4 py-2.5 text-left">Date</th><th class="px-4 py-2.5 text-left">Customer</th><th class="px-4 py-2.5 text-right">Total</th><th class="px-4 py-2.5 text-right">Paid</th><th class="px-4 py-2.5 text-left">Status</th><th class="px-4 py-2.5"></th></tr>
+          </thead>
+          <tbody id="salesBody" class="divide-y divide-stone-100 dark:divide-stone-800">
+            ${renderSalesRows(list)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+function renderSalesRows(list){
+  if(!list.length) return '<tr><td colspan="7" class="text-center py-10 text-stone-500 text-sm">No invoices yet — click "New Invoice"</td></tr>';
+  return list.map(i=>{
+    const c=findCust(i.customerId);
+    return `<tr class="row-hover cursor-pointer" onclick="openInvoiceView('${i.id}')">
+      <td class="px-4 py-2.5 num font-medium">${i.number}</td>
+      <td class="px-4 py-2.5 text-stone-600 dark:text-stone-400">${dateNice(i.date)}</td>
+      <td class="px-4 py-2.5">${c?.name||'—'}</td>
+      <td class="px-4 py-2.5 num text-right font-semibold">${fmt(i.total)}</td>
+      <td class="px-4 py-2.5 num text-right">${fmt(i.paid)}</td>
+      <td class="px-4 py-2.5"><span class="text-xs px-2 py-0.5 rounded-md ${i.status==='paid'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}">${i.status}</span></td>
+      <td class="px-4 py-2.5 text-right" onclick="event.stopPropagation()">
+        <button onclick="printInvoice('${i.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900" title="Print"><i data-lucide="printer" class="w-4 h-4"></i></button>
+        <button onclick="shareWhatsApp('${i.id}')" class="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600" title="WhatsApp"><i data-lucide="message-circle" class="w-4 h-4"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function filterSales(){
+  const q=(document.getElementById('salesSearch').value||'').toLowerCase();
+  const st=document.getElementById('salesStatus').value;
+  const list=state.invoices.filter(i=>{
+    if(st && i.status!==st) return false;
+    if(!q) return true;
+    const c=findCust(i.customerId);
+    return i.number.toLowerCase().includes(q) || (c?.name||'').toLowerCase().includes(q);
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('salesBody').innerHTML=renderSalesRows(list);
+  lucide.createIcons();
+}
+
+/* ---------- New Invoice ---------- */
+let _draft=null;
+function ensureWalkInCustomer(){
+  if(!state.customers.length){
+    state.customers.push({id:uid('c_'),name:'Walk-in Customer',type:'Walk-in',phone:'',email:'',gstin:'',address:'',balance:0,credit:0,since:todayISO()});
+    save();
+  }
+}
+function newDraft(){
+  ensureWalkInCustomer();
+  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
+}
+function viewNewInvoice(){
+  if(!_draft) _draft=newDraft();
+  ensureWalkInCustomer();
+  if(!state.customers.find(c=>c.id===_draft.customerId)) _draft.customerId = state.customers[0].id;
+  return `
+  <div class="space-y-4 pb-24 lg:pb-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between flex-wrap gap-2">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">New Bill</h1>
+        <p class="text-stone-500 text-sm">Tap products to add · adjust qty with +/- · save & share instantly</p>
+      </div>
+      <div class="hidden lg:flex flex-wrap gap-2">
+        <button onclick="cancelDraft()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm hover:bg-stone-50 dark:hover:bg-stone-900">Cancel</button>
+        <button onclick="saveDraft('save')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-1.5"><i data-lucide="save" class="w-4 h-4"></i> Save</button>
+        <button onclick="saveDraft('whatsapp')" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i> Save & WhatsApp</button>
+        <button onclick="saveDraft('print')" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="printer" class="w-4 h-4"></i> Save & Print</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <!-- Left: meta + product picker -->
+      <div class="lg:col-span-3 space-y-4">
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-stone-500">Bill #</label>
+              <input value="${_draft.number}" oninput="_draft.number=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-stone-500">Date</label>
+              <input type="date" value="${_draft.date}" oninput="_draft.date=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-stone-500">Customer</label>
+              <select onchange="_draft.customerId=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
+                ${state.customers.map(c=>`<option value="${c.id}" ${c.id===_draft.customerId?'selected':''}>${c.name} · ${c.type||'Walk-in'}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i> Customer phone <span class="text-stone-400">(for WhatsApp)</span></label>
+              <input type="tel" inputmode="tel" placeholder="+91 98765 43210" value="${_draft.phoneOverride||''}" oninput="_draft.phoneOverride=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center gap-2">
+            <i data-lucide="search" class="w-4 h-4 text-stone-400"></i>
+            <input id="prodSearch" oninput="renderProdGrid()" onkeydown="handleBarcodeKey(event)" placeholder="Type, scan barcode, or tap below…" class="flex-1 px-2 py-1.5 text-sm bg-transparent outline-none" autocomplete="off" />
+            <button type="button" onclick="startBarcodeScan()" title="Scan with camera" class="px-2 py-1 rounded-md text-xs bg-brand-600 text-white hover:bg-brand-700 flex items-center gap-1"><i data-lucide="scan-line" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">Scan</span></button>
+            <span class="text-xs text-stone-500 hidden md:inline">${state.products.length} products</span>
+          </div>
+          <div id="prodGrid" class="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[480px] overflow-y-auto scroll-thin">${renderProdGrid_inner()}</div>
+        </div>
+
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+          <label class="text-xs font-medium text-stone-500">Notes (optional)</label>
+          <textarea oninput="_draft.notes=this.value" rows="2" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" placeholder="Thank you note, delivery instructions, etc.">${_draft.notes||''}</textarea>
+        </div>
+      </div>
+
+      <!-- Right: Cart + Totals + Payment -->
+      <div class="lg:col-span-2 space-y-4">
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+            <div class="font-semibold text-sm flex items-center gap-2"><i data-lucide="shopping-cart" class="w-4 h-4"></i> Cart <span id="cartCount" class="text-xs text-stone-500"></span></div>
+            <button onclick="if(confirm('Clear cart?')){_draft.lines=[]; rerenderCart();}" class="text-xs text-stone-500 hover:text-rose-600">Clear all</button>
+          </div>
+          <div id="cartBody" class="max-h-[360px] overflow-y-auto scroll-thin divide-y divide-stone-100 dark:divide-stone-800">${renderCart()}</div>
+        </div>
+        <div id="totals" class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">${renderTotals()}</div>
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+          <div class="text-sm font-semibold mb-2">Payment</div>
+          <div class="grid grid-cols-4 gap-1.5">
+            ${['Cash','Card','UPI','Bank'].map(m=>`<button type="button" onclick="setPM('${m}', this)" data-pm="${m}" class="px-2 py-2 text-xs rounded-lg border border-stone-200 dark:border-stone-800 ${_draft.payment===m?'bg-brand-50 text-brand-700 border-brand-300 dark:bg-brand-900/30 dark:text-brand-300':'hover:bg-stone-50 dark:hover:bg-stone-900'}">${m}</button>`).join('')}
+          </div>
+          <div class="mt-3">
+            <label class="text-xs font-medium text-stone-500">Amount paid</label>
+            <input id="paidNow" type="number" value="${_draft.paid}" oninput="_draft.paid=Number(this.value||0); renderTotalsPanel()" class="mt-1 w-full px-3 py-2.5 text-base rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num font-semibold focus:border-brand-400" inputmode="decimal" />
+            <div class="flex gap-2 mt-2">
+              <button type="button" onclick="markFullyPaid()" class="text-xs flex-1 px-2 py-1.5 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300">Fully paid</button>
+              <button type="button" onclick="markCredit()" class="text-xs flex-1 px-2 py-1.5 rounded-md bg-stone-100 dark:bg-stone-900 hover:bg-stone-200">On credit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile sticky action bar -->
+    <div class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#0f0f10]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-3 py-2.5 flex gap-2 shadow-pop">
+      <button onclick="cancelDraft()" class="px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
+      <button onclick="saveDraft('save')" class="flex-1 px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 text-sm font-medium">Save</button>
+      <button onclick="saveDraft('whatsapp')" class="flex-1 px-3 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-4 h-4"></i> WA</button>
+      <button onclick="saveDraft('print')" class="flex-1 px-3 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium flex items-center justify-center gap-1"><i data-lucide="printer" class="w-4 h-4"></i> Print</button>
+    </div>
+  </div>`;
+}
+function totalsCalc(){
+  if(!_draft) return {sub:0,tax:0,disc:0,total:0};
+  const sub=_draft.lines.reduce((s,l)=>s+l.qty*l.price,0);
+  const tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*l.tax/100,0);
+  const disc=Number(_draft.discount||0);
+  const total=Math.round(sub+tax-disc);
+  return {sub,tax,disc,total};
+}
+function renderTotals(){
+  const t=totalsCalc();
+  const due=Math.max(0,t.total-Number(_draft?.paid||0));
+  return `<div class="text-sm font-semibold mb-3">Summary</div>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(t.sub)}</span></div>
+      <div class="flex justify-between"><span class="text-stone-500">Tax</span><span class="num">${fmt(t.tax)}</span></div>
+      <div class="flex justify-between items-center"><span class="text-stone-500">Discount</span>
+        <input value="${_draft?.discount||0}" oninput="_draft.discount=Number(this.value||0); renderTotalsPanel()" type="number" class="num text-right w-24 px-2 py-1 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" />
+      </div>
+      <div class="border-t border-stone-200 dark:border-stone-800 pt-2 flex justify-between text-lg font-bold"><span>Total</span><span class="num text-brand-700 dark:text-brand-300">${fmt(t.total)}</span></div>
+      <div class="flex justify-between text-xs ${due>0?'text-amber-600':'text-emerald-600'}"><span>${due>0?'Due':'Settled'}</span><span class="num font-semibold">${fmt(due)}</span></div>
+    </div>`;
+}
+function renderTotalsPanel(){ const el=document.getElementById('totals'); if(el) el.innerHTML = renderTotals(); }
+function renderCart(){
+  if(!_draft || !_draft.lines.length) return '<div class="px-4 py-12 text-center text-stone-500"><div class="text-3xl mb-2">🛒</div><div class="text-sm">Tap a product to add it</div></div>';
+  return _draft.lines.map((l,idx)=>`
+    <div class="px-3 py-3 flex items-center gap-2">
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-sm truncate">${l.name}</div>
+        <div class="text-xs text-stone-500 num">${fmt(l.price)} ${l.tax?'· '+l.tax+'%':''}</div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="adjQty(${idx},-1)" class="w-7 h-7 rounded-md border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 flex items-center justify-center"><i data-lucide="minus" class="w-3 h-3"></i></button>
+        <input type="number" min="1" value="${l.qty}" oninput="setQty(${idx},this.value)" class="num text-center w-10 px-1 py-1 text-sm rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" inputmode="numeric" />
+        <button type="button" onclick="adjQty(${idx},1)" class="w-7 h-7 rounded-md border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 flex items-center justify-center"><i data-lucide="plus" class="w-3 h-3"></i></button>
+      </div>
+      <div class="num text-sm font-semibold w-20 text-right shrink-0">${fmt(l.qty*l.price*(1+l.tax/100))}</div>
+      <button type="button" onclick="removeLine(${idx})" class="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>`).join('');
+}
+function rerenderCart(){
+  const body=document.getElementById('cartBody'); if(body) body.innerHTML=renderCart();
+  const cnt=document.getElementById('cartCount'); if(cnt) cnt.textContent = _draft.lines.length ? `· ${_draft.lines.reduce((s,l)=>s+l.qty,0)} item${_draft.lines.reduce((s,l)=>s+l.qty,0)===1?'':'s'}` : '';
+  renderTotalsPanel();
+  lucide.createIcons();
+}
+// Backwards-compat aliases
+function renderLines(){ return renderCart(); }
+function rerenderLines(){ rerenderCart(); }
+function renderProdGrid_inner(filter){
+  const q=(filter||'').toLowerCase().trim();
+  const list = q ? state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)) : state.products;
+  if(!list.length) return '<div class="col-span-full text-center py-8 text-stone-500 text-sm">No products match</div>';
+  return list.map(p=>{
+    const out = p.stock<=0;
+    const low = p.stock>0 && p.stock<=p.reorder;
+    return `<button type="button" ${out?'disabled':''} onclick="addLine('${p.id}')" class="${out?'opacity-50 cursor-not-allowed':'hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 active:scale-95'} p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-left flex flex-col gap-1 transition relative">
+      ${low?'<span class="absolute top-1 right-1 text-[9px] bg-amber-100 text-amber-700 px-1 rounded">low</span>':''}
+      ${out?'<span class="absolute top-1 right-1 text-[9px] bg-rose-100 text-rose-700 px-1 rounded">out</span>':''}
+      <div class="text-2xl">${p.img||'📦'}</div>
+      <div class="text-xs font-medium leading-tight line-clamp-2 min-h-[2.2em]">${p.name}</div>
+      <div class="num text-sm font-bold text-brand-700 dark:text-brand-300">${fmt(p.price)}</div>
+      <div class="text-[10px] text-stone-500 num">SKU ${p.sku} · ${p.stock} ${p.unit||''}</div>
+    </button>`;
+  }).join('');
+}
+function renderProdGrid(){
+  const q = (document.getElementById('prodSearch')?.value)||'';
+  const grid=document.getElementById('prodGrid'); if(grid) grid.innerHTML = renderProdGrid_inner(q);
+  lucide.createIcons();
+}
+function addLine(pid){
+  const p=findProd(pid); if(!p) return;
+  if(p.stock<=0){ toast('Out of stock','err'); return; }
+  if(!_draft) _draft=newDraft();
+  const ex=_draft.lines.find(l=>l.pid===pid);
+  if(ex){ ex.qty+=1; toast(`${p.name} × ${ex.qty}`); }
+  else { _draft.lines.push({pid,sku:p.sku,name:p.name,qty:1,price:p.price,cost:p.cost,tax:p.tax,disc:0}); toast(`Added ${p.name}`); }
+  rerenderCart();
+}
+function adjQty(idx, delta){
+  if(!_draft || !_draft.lines[idx]) return;
+  _draft.lines[idx].qty = Math.max(1, _draft.lines[idx].qty + delta);
+  rerenderCart();
+}
+function setQty(idx, val){
+  if(!_draft || !_draft.lines[idx]) return;
+  _draft.lines[idx].qty = Math.max(1, Number(val||1));
+  renderTotalsPanel();
+}
+function removeLine(idx){
+  if(!_draft) return;
+  _draft.lines.splice(idx,1);
+  rerenderCart();
+}
+function setPM(method, btn){
+  if(!_draft) return;
+  _draft.payment = method;
+  document.querySelectorAll('[data-pm]').forEach(b=>b.classList.remove('bg-brand-50','text-brand-700','border-brand-300','dark:bg-brand-900/30','dark:text-brand-300'));
+  if(btn) btn.classList.add('bg-brand-50','text-brand-700','border-brand-300','dark:bg-brand-900/30','dark:text-brand-300');
+}
+function markFullyPaid(){
+  if(!_draft) return;
+  _draft.paid = Math.round(totalsCalc().total);
+  const inp=document.getElementById('paidNow'); if(inp) inp.value=_draft.paid;
+  renderTotalsPanel();
+}
+function markCredit(){
+  if(!_draft) return;
+  _draft.paid = 0;
+  const inp=document.getElementById('paidNow'); if(inp) inp.value=0;
+  renderTotalsPanel();
+}
+// Old function name kept for any stray callers
+function renderAddProduct(){ renderProdGrid(); }
+
+/* ---------- Barcode scanning (hardware + camera) ---------- */
+function handleBarcodeKey(e){
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  const q = (e.target.value||'').trim();
+  if(!q) return;
+  // Exact SKU match (typical for hardware barcode scanners)
+  let p = state.products.find(p=>p.sku.toLowerCase()===q.toLowerCase());
+  // Then partial name/SKU match
+  if(!p) p = state.products.find(p=>p.sku.toLowerCase().includes(q.toLowerCase()) || p.name.toLowerCase().includes(q.toLowerCase()));
+  if(!p){ toast(`No product matches "${q}"`,'err'); return; }
+  e.target.value='';
+  addLine(p.id);
+  renderProdGrid();
+}
+
+let _scanStream=null, _scanLoop=null;
+async function startBarcodeScan(){
+  try{
+    if(!('BarcodeDetector' in window)){
+      toast('Camera scan needs Chrome on Android. Tip: a USB barcode scanner works in the search box.','info');
+      document.getElementById('prodSearch')?.focus();
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    _scanStream = stream;
+    showModal(`<div class="p-4 w-[420px] max-w-full">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold flex items-center gap-2"><i data-lucide="scan-line" class="w-4 h-4 text-brand-600"></i> Scan barcode</div>
+        <button onclick="stopBarcodeScan(); closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div id="scanWrap" class="aspect-video bg-black rounded-xl overflow-hidden relative">
+        <video id="scanVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <div class="absolute inset-x-6 top-1/2 h-0.5 bg-rose-500/80 shadow-[0_0_8px_rgba(244,63,94,0.7)] -translate-y-1/2 pointer-events-none"></div>
+      </div>
+      <div id="scanStatus" class="text-xs text-stone-500 mt-2 text-center">Point the back camera at a product barcode</div>
+    </div>`);
+    const video = document.getElementById('scanVideo');
+    video.srcObject = stream;
+    await video.play().catch(()=>{});
+    const detector = new BarcodeDetector({formats:['ean_13','ean_8','code_128','upc_a','upc_e','code_39','code_93','itf','codabar','qr_code']});
+    let stopped=false;
+    _scanLoop = async ()=>{
+      if(stopped || !_scanStream) return;
+      try{
+        const codes = await detector.detect(video);
+        if(codes && codes.length){
+          const code = codes[0].rawValue;
+          const p = state.products.find(p=>p.sku.toLowerCase()===code.toLowerCase());
+          if(p){
+            stopped=true;
+            stopBarcodeScan();
+            closeModal();
+            addLine(p.id);
+            return;
+          } else {
+            const st=document.getElementById('scanStatus'); if(st) st.textContent='Read: '+code+' — no SKU matches. Keep scanning…';
+          }
+        }
+      }catch(err){ console.warn('detect',err); }
+      requestAnimationFrame(_scanLoop);
+    };
+    requestAnimationFrame(_scanLoop);
+  }catch(err){
+    console.error(err);
+    toast('Camera blocked: '+(err.message||'permission denied'),'err');
+    stopBarcodeScan();
+  }
+}
+function stopBarcodeScan(){
+  try{ _scanStream?.getTracks().forEach(t=>t.stop()); }catch(_){}
+  _scanStream=null; _scanLoop=null;
+}
+function cancelDraft(){ _draft=null; go(isTeam()?'#/team-pos':'#/sales'); }
+function saveDraft(mode){
+  if(!_draft.lines.length) return toast('Add at least one item','err');
+  const t=totalsCalc();
+  _draft.subtotal=t.sub; _draft.tax=t.tax; _draft.total=t.total;
+  _draft.status = _draft.paid>=_draft.total ? 'paid' : 'unpaid';
+  if(!_draft.createdBy) _draft.createdBy=currentUser()||'Founder';
+  // adjust stock
+  _draft.lines.forEach(l=>{ const p=findProd(l.pid); if(p) p.stock = Math.max(0, p.stock - l.qty); });
+  state.invoices.push({..._draft});
+  state.audit.push({ts:Date.now(),action:'invoice.create',ref:_draft.number,by:_draft.createdBy});
+  save(); const id=_draft.id; _draft=null; toast('Bill saved ✓');
+  // Navigate to bills list, then open the bill modal with full action buttons
+  go(isTeam()?'#/team-bills':'#/sales');
+  setTimeout(()=>{
+    openInvoiceView(id);
+    // Auto-trigger the requested action so the user gets what they clicked
+    if(mode==='print') setTimeout(()=>printInvoice(id), 250);
+    else if(mode==='whatsapp') setTimeout(()=>shareWhatsApp(id), 250);
+  }, 120);
+}
+
+/* ---------- Invoice view + print ---------- */
+function openInvoiceView(id){
+  const i=state.invoices.find(x=>x.id===id); if(!i){ toast('Bill not found','err'); return; }
+  const c=findCust(i.customerId);
+  showModal(`<div class="p-5">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="text-xs text-stone-500 uppercase tracking-wider">${i.status==='paid'?'Receipt':'Invoice'}</div>
+        <div class="text-xl font-bold num">${i.number}</div>
+        <div class="text-xs text-stone-500 flex items-center gap-2 mt-0.5"><span>${dateNice(i.date)} · ${c?.name||'—'}</span>${c?custTypeBadge(c.type):''}</div>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-stone-50 dark:bg-stone-900 text-xs text-stone-500"><tr><th class="text-left px-3 py-2">Item</th><th class="text-right px-3 py-2">Qty</th><th class="text-right px-3 py-2">Price</th><th class="text-right px-3 py-2">Total</th></tr></thead>
+        <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+          ${i.lines.map(l=>`<tr><td class="px-3 py-2">${l.name}<div class="text-xs text-stone-500 num">${l.sku}</div></td><td class="text-right px-3 py-2 num">${l.qty}</td><td class="text-right px-3 py-2 num">${fmt(l.price)}</td><td class="text-right px-3 py-2 num font-medium">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+      <div class="space-y-1">
+        <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(i.subtotal)}</span></div>
+        <div class="flex justify-between"><span class="text-stone-500">Tax</span><span class="num">${fmt(i.tax)}</span></div>
+        <div class="flex justify-between font-bold border-t border-stone-200 dark:border-stone-800 pt-1"><span>Total</span><span class="num">${fmt(i.total)}</span></div>
+        <div class="flex justify-between text-xs"><span class="text-stone-500">Paid (${i.payment})</span><span class="num">${fmt(i.paid)}</span></div>
+        <div class="flex justify-between text-xs"><span class="text-stone-500">Balance</span><span class="num">${fmt(i.total-i.paid)}</span></div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <button onclick="printInvoice('${i.id}')" class="w-full px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center justify-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Print receipt</button>
+        <button onclick="shareWhatsApp('${i.id}')" class="w-full px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center justify-center gap-2"><i data-lucide="message-circle" class="w-4 h-4"></i> Share via WhatsApp</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="downloadInvoiceHTML('${i.id}')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-4 h-4"></i> Download</button>
+          <button onclick="copyReceiptText('${i.id}')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center justify-center gap-1.5"><i data-lucide="copy" class="w-4 h-4"></i> Copy</button>
+        </div>
+        ${i.status==='unpaid' && isFounder()?`<button onclick="markPaid('${i.id}')" class="w-full px-3 py-2 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm flex items-center justify-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> Mark as paid</button>`:''}
+      </div>
+    </div>
+  </div>`);
+}
+function markPaid(id){ const i=state.invoices.find(x=>x.id===id); if(!i) return; i.paid=i.total; i.status='paid'; save(); toast('Marked paid'); closeModal(); router(); }
+function buildReceiptHTML(i){
+  const c=findCust(i.customerId);
+  return `
+  <div style="font-family:Inter,system-ui,sans-serif;color:#0a0a0b;max-width:680px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0a0a0b;padding-bottom:14px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:24px;font-weight:800;letter-spacing:-.02em;">${state.org.name}</div>
+        <div style="font-size:12px;color:#57534e;line-height:1.5;">${state.org.address}<br>${state.org.phone} · ${state.org.email}<br>${state.org.gstin?'GSTIN: '+state.org.gstin:''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#57534e;letter-spacing:.1em;text-transform:uppercase;">${i.status==='paid'?'Tax Receipt':'Invoice'}</div>
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;">${i.number}</div>
+        <div style="font-size:12px;color:#57534e;">${dateNice(i.date)}</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;color:#57534e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Bill to</div>
+        <div style="font-size:14px;font-weight:600;">${c?.name||'—'} <span style="font-size:10px;font-weight:500;padding:1px 6px;border-radius:4px;background:${c?.type==='Online'?'#e0f2fe':'#fef3c7'};color:${c?.type==='Online'?'#0369a1':'#92400e'};margin-left:4px;">${c?.type||'Walk-in'}</span></div>
+        <div style="font-size:12px;color:#57534e;">${c?.address||''}<br>${c?.phone||''} ${c?.gstin?'· '+c.gstin:''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#57534e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Payment</div>
+        <div style="font-size:14px;font-weight:600;">${i.payment||'—'}</div>
+        <div style="font-size:12px;color:${i.status==='paid'?'#059669':'#d97706'};font-weight:600;text-transform:uppercase;">${i.status}</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:1px solid #e7e5e4;text-align:left;color:#57534e;font-size:11px;text-transform:uppercase;letter-spacing:.06em;">
+        <th style="padding:8px 0;">Item</th><th style="text-align:right;padding:8px 0;">Qty</th><th style="text-align:right;padding:8px 0;">Price</th><th style="text-align:right;padding:8px 0;">Tax</th><th style="text-align:right;padding:8px 0;">Total</th>
+      </tr></thead>
+      <tbody>${i.lines.map(l=>`<tr style="border-bottom:1px solid #f5f5f4;"><td style="padding:8px 0;"><div style="font-weight:600;">${l.name}</div><div style="font-size:11px;color:#78716c;font-family:'JetBrains Mono',monospace;">${l.sku}</div></td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.qty}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${fmt(l.price)}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.tax}%</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;font-weight:600;">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}</tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <div style="min-width:240px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Tax</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.tax)}</span></div>
+        ${i.discount?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Discount</span><span style="font-family:'JetBrains Mono',monospace;">- ${fmt(i.discount)}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #0a0a0b;margin-top:4px;font-size:16px;font-weight:800;"><span>TOTAL</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;color:#057a55;font-weight:600;"><span>Paid</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.paid)}</span></div>
+        ${i.total-i.paid>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#b45309;font-weight:600;"><span>Balance Due</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total-i.paid)}</span></div>`:''}
+      </div>
+    </div>
+    <div style="margin-top:24px;padding-top:14px;border-top:1px dashed #d6d3d1;text-align:center;font-size:12px;color:#78716c;">${state.org.footer||''}<br><span style="font-size:10px;">Generated by BizOS · ${new Date().toLocaleString('en-IN')}</span></div>
+  </div>`;
+}
+function printInvoice(id){
+  const i=state.invoices.find(x=>x.id===id); if(!i){ toast('Bill not found','err'); return; }
+  const area=document.getElementById('print-area');
+  area.innerHTML=buildReceiptHTML(i);
+  // Use afterprint event for cleanup so content stays put until printing completes
+  const cleanup=()=>{ area.innerHTML=''; window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+  // Slight delay so the DOM settles before triggering the print dialog
+  setTimeout(()=>{ try{ window.print(); }catch(e){ console.error(e); toast('Print failed: '+e.message,'err'); area.innerHTML=''; } }, 120);
+}
+function buildReceiptText(i){
+  const c=findCust(i.customerId);
+  const lines = i.lines.map(l=>{
+    const total = l.qty*l.price*(1+l.tax/100);
+    return `• ${l.name} × ${l.qty} — ${fmt(total)}`;
+  }).join('\n');
+  const due = i.total - i.paid;
+  return [
+    `*${state.org.name}*`,
+    state.org.address,
+    state.org.phone + (state.org.email?' · '+state.org.email:''),
+    state.org.gstin?'GSTIN: '+state.org.gstin:'',
+    '',
+    '────────────',
+    `*${i.status==='paid'?'TAX RECEIPT':'INVOICE'} ${i.number}*`,
+    `Date: ${dateNice(i.date)}`,
+    `Bill to: ${c?.name||'Walk-in customer'}`,
+    '',
+    '*Items:*',
+    lines,
+    '',
+    `Subtotal: ${fmt(i.subtotal)}`,
+    `Tax: ${fmt(i.tax)}`,
+    i.discount?`Discount: -${fmt(i.discount)}`:'',
+    `*TOTAL: ${fmt(i.total)}*`,
+    `Paid (${i.payment}): ${fmt(i.paid)}`,
+    due>0?`Balance due: ${fmt(due)}`:'',
+    '',
+    state.org.footer||'',
+    '— Sent via BizOS'
+  ].filter(Boolean).join('\n');
+}
+function _waOpen(phone, text){
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/?text=${encodeURIComponent(text)}`;
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+  document.body.appendChild(a); a.click(); a.remove();
+  try{ navigator.clipboard?.writeText(text); }catch(_){}
+}
+function shareWhatsApp(id){
+  const i=state.invoices.find(x=>x.id===id); if(!i){ toast('Bill not found','err'); return; }
+  const c=findCust(i.customerId);
+  const text=buildReceiptText(i);
+  // Priority: phone entered on the bill > customer's saved phone > prompt
+  const billPhone = (i.phoneOverride||'').replace(/[^0-9]/g,'');
+  const custPhone = (c?.phone||'').replace(/[^0-9]/g,'');
+  const phone = billPhone || custPhone;
+  if(phone){
+    _waOpen(phone, text);
+    toast(`Opening WhatsApp · ${c?.name||'+'+phone}`);
+    return;
+  }
+  // Stash text in a global so the prompt buttons can use it cleanly
+  window._pendingShare={text, billId:id};
+  showModal(`<div class="p-5 w-[420px] max-w-full">
+    <div class="flex items-center justify-between mb-3">
+      <div class="font-semibold flex items-center gap-2"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i> Send bill on WhatsApp</div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="text-sm text-stone-500 mb-3">No phone saved for this customer. Enter one to send directly, or pick from WhatsApp.</div>
+    <input id="waPhonePrompt" type="tel" inputmode="tel" placeholder="+91 98765 43210" class="w-full px-3 py-2.5 text-base rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num focus:border-brand-400" autofocus />
+    <div class="flex gap-2 mt-3">
+      <button onclick="_doSharePick()" class="flex-1 px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Pick contact</button>
+      <button onclick="_doShareWithPhone()" class="flex-1 px-3 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium">Send to phone</button>
+    </div>
+  </div>`);
+  setTimeout(()=>document.getElementById('waPhonePrompt')?.focus(),50);
+}
+function _doSharePick(){
+  const t=window._pendingShare?.text||''; closeModal(); _waOpen('', t); toast('Opening WhatsApp — choose recipient');
+}
+function _doShareWithPhone(){
+  const t=window._pendingShare?.text||'';
+  const p=(document.getElementById('waPhonePrompt')?.value||'').replace(/[^0-9]/g,'');
+  if(!p){ toast('Enter phone','err'); return; }
+  // Also save the phone to the customer for next time
+  const i=state.invoices.find(x=>x.id===window._pendingShare?.billId);
+  if(i){
+    const c=findCust(i.customerId);
+    if(c && !c.phone){ c.phone='+'+p; save(); }
+    if(i){ i.phoneOverride='+'+p; save(); }
+  }
+  closeModal(); _waOpen(p, t); toast('Opening WhatsApp · +'+p);
+}
+function copyReceiptText(id){
+  const i=state.invoices.find(x=>x.id===id); if(!i) return;
+  navigator.clipboard.writeText(buildReceiptText(i)).then(()=>toast('Receipt copied to clipboard'));
+}
+function downloadInvoiceHTML(id){
+  const i=state.invoices.find(x=>x.id===id); if(!i) return;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${i.number}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet"></head><body style="margin:0;padding:32px;background:#fafaf9;">${buildReceiptHTML(i)}</body></html>`;
+  const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=i.number+'.html'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Receipt downloaded');
+}
+
+/* ---------- Inventory ---------- */
+function viewInventory(){
+  const list=[...state.products];
+  const teamMode=isTeam();
+  return `
+  <div class="space-y-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Inventory</h1>
+        <p class="text-stone-500 text-sm">${list.length} products · ${lowStock().length} low stock${teamMode?'':` · value ${fmt(list.reduce((s,p)=>s+p.stock*p.cost,0))}`}</p>
+      </div>
+      ${teamMode?'':`<button onclick="openProductModal()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>`}
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center gap-2">
+        <input id="invSearch" oninput="renderInvBody()" placeholder="Search by name or SKU…" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:border-brand-400 w-full sm:w-72" />
+      </div>
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
+            ${teamMode
+              ? `<tr><th class="px-4 py-2.5 text-left">Product</th><th class="px-4 py-2.5 text-left">SKU</th><th class="px-4 py-2.5 text-left">Category</th><th class="px-4 py-2.5 text-right">Price</th><th class="px-4 py-2.5 text-right">In stock</th></tr>`
+              : `<tr><th class="px-4 py-2.5 text-left">Product</th><th class="px-4 py-2.5 text-left">SKU</th><th class="px-4 py-2.5 text-left">Category</th><th class="px-4 py-2.5 text-right">Cost</th><th class="px-4 py-2.5 text-right">Price</th><th class="px-4 py-2.5 text-right">Margin</th><th class="px-4 py-2.5 text-right">Stock</th><th class="px-4 py-2.5"></th></tr>`
+            }
+          </thead>
+          <tbody id="invBody" class="divide-y divide-stone-100 dark:divide-stone-800">${renderInvRows(list)}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+function renderInvRows(list){
+  const teamMode=isTeam();
+  if(!list.length) return `<tr><td colspan="${teamMode?5:8}" class="text-center py-10 text-stone-500 text-sm">No products yet</td></tr>`;
+  return list.map(p=>{
+    const m=p.price>0?Math.round((p.price-p.cost)/p.price*100):0;
+    const low=p.stock<=p.reorder;
+    if(teamMode){
+      return `<tr class="row-hover">
+        <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><div class="w-8 h-8 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">${p.img||'📦'}</div><div><div class="font-medium">${p.name}</div><div class="text-xs text-stone-500">${p.unit}</div></div></div></td>
+        <td class="px-4 py-2.5 num text-stone-600 dark:text-stone-400 text-xs">${p.sku}</td>
+        <td class="px-4 py-2.5 text-xs">${p.category}</td>
+        <td class="px-4 py-2.5 num text-right font-medium">${fmt(p.price)}</td>
+        <td class="px-4 py-2.5 num text-right">
+          <span class="${low?'text-rose-600 font-semibold':p.stock===0?'text-rose-600 font-semibold':''}">${p.stock}</span>
+          ${low?`<div class="text-[10px] text-rose-500">${p.stock===0?'out':'low'}</div>`:''}
+        </td>
+      </tr>`;
+    }
+    return `<tr class="row-hover">
+      <td class="px-4 py-2.5"><div class="flex items-center gap-2.5"><div class="w-8 h-8 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">${p.img||'📦'}</div><div><div class="font-medium">${p.name}</div><div class="text-xs text-stone-500">${p.unit}</div></div></div></td>
+      <td class="px-4 py-2.5 num text-stone-600 dark:text-stone-400 text-xs">${p.sku}</td>
+      <td class="px-4 py-2.5 text-xs">${p.category}</td>
+      <td class="px-4 py-2.5 num text-right text-stone-600 dark:text-stone-400">${fmt(p.cost)}</td>
+      <td class="px-4 py-2.5 num text-right font-medium">${fmt(p.price)}</td>
+      <td class="px-4 py-2.5 num text-right text-xs ${m<15?'text-rose-600':'text-emerald-600'}">${m}%</td>
+      <td class="px-4 py-2.5 num text-right">
+        <span class="${low?'text-rose-600 font-semibold':''}">${p.stock}</span>
+        ${low?`<div class="text-[10px] text-rose-500">low</div>`:''}
+      </td>
+      <td class="px-4 py-2.5 text-right">
+        <button onclick="openProductModal('${p.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+        <button onclick="deleteProduct('${p.id}')" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function renderInvBody(){
+  const q=(document.getElementById('invSearch').value||'').toLowerCase();
+  const list=state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));
+  document.getElementById('invBody').innerHTML=renderInvRows(list); lucide.createIcons();
+}
+function openProductModal(id){
+  const p = id ? findProd(id) : {id:uid('p_'),sku:'SKU-'+(1000+state.products.length+1),name:'',category:'General',cost:0,price:0,stock:0,reorder:5,tax:18,unit:'Pcs',hsn:'',img:'📦'};
+  showModal(`<div class="p-5 w-[480px] max-w-full">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-semibold text-lg">${id?'Edit':'Add'} product</div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <form onsubmit="event.preventDefault(); saveProduct('${p.id}', ${id?true:false})" class="grid grid-cols-2 gap-3 text-sm">
+      <div class="col-span-2"><label class="text-xs font-medium text-stone-500">Name</label><input id="pname" value="${p.name}" required class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>
+      <div><label class="text-xs font-medium text-stone-500">SKU</label><input id="psku" value="${p.sku}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Category</label><input id="pcat" value="${p.category}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Cost</label><input id="pcost" type="number" value="${p.cost}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Selling price</label><input id="pprice" type="number" value="${p.price}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Stock</label><input id="pstock" type="number" value="${p.stock}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Reorder at</label><input id="preorder" type="number" value="${p.reorder}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="ptax" type="number" value="${p.tax}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Unit</label><input id="punit" value="${p.unit}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div class="col-span-2 flex justify-end gap-2 mt-2">
+        <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save product</button>
+      </div>
+    </form>
+  </div>`);
+}
+function saveProduct(id, isEdit){
+  const p = isEdit ? findProd(id) : {id};
+  p.name=document.getElementById('pname').value;
+  p.sku=document.getElementById('psku').value;
+  p.category=document.getElementById('pcat').value;
+  p.cost=Number(document.getElementById('pcost').value||0);
+  p.price=Number(document.getElementById('pprice').value||0);
+  p.stock=Number(document.getElementById('pstock').value||0);
+  p.reorder=Number(document.getElementById('preorder').value||0);
+  p.tax=Number(document.getElementById('ptax').value||0);
+  p.unit=document.getElementById('punit').value;
+  if(!isEdit){ p.img='📦'; p.hsn=''; state.products.push(p); }
+  save(); closeModal(); toast(isEdit?'Product updated':'Product added'); router();
+}
+function deleteProduct(id){ if(!confirm('Delete this product?')) return; state.products=state.products.filter(p=>p.id!==id); save(); toast('Product deleted','info'); router(); }
+
+/* ---------- Customers ---------- */
+function viewCustomers(){
+  const list=state.customers;
+  const walkin=list.filter(c=>(c.type||'Walk-in')==='Walk-in').length;
+  const online=list.filter(c=>c.type==='Online').length;
+  return `
+  <div class="space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div><h1 class="text-2xl font-bold tracking-tight">Customers</h1><p class="text-stone-500 text-sm">${list.length} customers · ${walkin} walk-in · ${online} online</p></div>
+      <button onclick="openCustomerModal()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Add Customer</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+        <div class="text-xs text-stone-500 flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-600"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> Walk-in customers</div>
+        <div class="num text-xl font-semibold mt-1">${walkin}</div>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+        <div class="text-xs text-stone-500 flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-sky-600"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg> Online customers</div>
+        <div class="num text-xl font-semibold mt-1">${online}</div>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
+        <div class="text-xs text-stone-500">Total lifetime value</div>
+        <div class="num text-xl font-semibold mt-1">${fmt(state.invoices.reduce((s,i)=>s+i.total,0))}</div>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex flex-wrap items-center gap-2">
+        <input id="custSearch" oninput="renderCustBody()" placeholder="Search by name…" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:border-brand-400 w-full sm:w-72" />
+        <select id="custType" onchange="renderCustBody()" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none">
+          <option value="">All types</option><option>Walk-in</option><option>Online</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
+            <tr><th class="px-4 py-2.5 text-left">Customer</th><th class="px-4 py-2.5 text-left">Type</th><th class="px-4 py-2.5 text-left">Phone</th><th class="px-4 py-2.5 text-left">Email</th><th class="px-4 py-2.5 text-left">GSTIN</th><th class="px-4 py-2.5 text-right">Lifetime</th><th class="px-4 py-2.5 text-right">Outstanding</th><th class="px-4 py-2.5"></th></tr>
+          </thead>
+          <tbody id="custBody" class="divide-y divide-stone-100 dark:divide-stone-800">${renderCustRows(list)}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+function renderCustRows(list){
+  if(!list.length) return '<tr><td colspan="8" class="text-center py-10 text-stone-500 text-sm">No customers match</td></tr>';
+  return list.map(c=>{
+    const ltv=state.invoices.filter(i=>i.customerId===c.id).reduce((s,i)=>s+i.total,0);
+    const due=state.invoices.filter(i=>i.customerId===c.id && i.status==='unpaid').reduce((s,i)=>s+(i.total-i.paid),0);
+    return `<tr class="row-hover">
+      <td class="px-4 py-2.5"><div class="font-medium">${c.name}</div><div class="text-xs text-stone-500">${c.address||''}</div></td>
+      <td class="px-4 py-2.5">${custTypeBadge(c.type)}</td>
+      <td class="px-4 py-2.5 num text-xs">${c.phone||''}</td>
+      <td class="px-4 py-2.5 text-xs">${c.email||''}</td>
+      <td class="px-4 py-2.5 num text-xs">${c.gstin||''}</td>
+      <td class="px-4 py-2.5 num text-right">${fmt(ltv)}</td>
+      <td class="px-4 py-2.5 num text-right ${due>0?'text-amber-600 font-semibold':''}">${fmt(due)}</td>
+      <td class="px-4 py-2.5 text-right">
+        <button onclick="openCustomerModal('${c.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+        <button onclick="deleteCustomer('${c.id}')" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function renderCustBody(){
+  const q=(document.getElementById('custSearch')?.value||'').toLowerCase();
+  const t=document.getElementById('custType')?.value||'';
+  const list=state.customers.filter(c=>{
+    if(t && (c.type||'Walk-in')!==t) return false;
+    if(!q) return true;
+    return c.name.toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.email||'').toLowerCase().includes(q);
+  });
+  const body=document.getElementById('custBody'); if(body) body.innerHTML = renderCustRows(list);
+  lucide.createIcons();
+}
+function openCustomerModal(id){
+  const c=id?findCust(id):{id:uid('c_'),name:'',type:'Walk-in',phone:'',email:'',gstin:'',address:'',balance:0,credit:0,since:todayISO()};
+  showModal(`<div class="p-5 w-[460px] max-w-full">
+    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">${id?'Edit':'Add'} customer</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <form onsubmit="event.preventDefault(); saveCustomer('${c.id}', ${id?true:false})" class="space-y-3 text-sm">
+      <div>
+        <label class="text-xs font-medium text-stone-500">Customer type</label>
+        <div class="mt-1 grid grid-cols-2 gap-2">
+          <label class="cursor-pointer flex items-center gap-2 p-2.5 rounded-lg border ${c.type==='Walk-in'?'border-amber-300 bg-amber-50 dark:bg-amber-900/20':'border-stone-200 dark:border-stone-800'} hover:border-amber-300">
+            <input type="radio" name="ctype" value="Walk-in" ${c.type!=='Online'?'checked':''} class="accent-amber-600" />
+            <div class="flex-1"><div class="font-medium text-sm flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> Walk-in</div><div class="text-[11px] text-stone-500">In-store / counter</div></div>
+          </label>
+          <label class="cursor-pointer flex items-center gap-2 p-2.5 rounded-lg border ${c.type==='Online'?'border-sky-300 bg-sky-50 dark:bg-sky-900/20':'border-stone-200 dark:border-stone-800'} hover:border-sky-300">
+            <input type="radio" name="ctype" value="Online" ${c.type==='Online'?'checked':''} class="accent-sky-600" />
+            <div class="flex-1"><div class="font-medium text-sm flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-sky-600"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg> Online</div><div class="text-[11px] text-stone-500">Web / phone / WhatsApp</div></div>
+          </label>
+        </div>
+      </div>
+      ${[['cname','Name',c.name,'text',true],['cphone','Phone',c.phone,'text'],['cemail','Email',c.email,'email'],['cgstin','GSTIN / Tax ID',c.gstin,'text'],['caddress','Address',c.address,'text']].map(([id,label,val,t,req])=>`
+        <div><label class="text-xs font-medium text-stone-500">${label}</label><input id="${id}" type="${t}" value="${val||''}" ${req?'required':''} class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>`).join('')}
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save</button>
+      </div>
+    </form>
+  </div>`);
+}
+function saveCustomer(id, isEdit){
+  const c=isEdit?findCust(id):{id};
+  c.name=document.getElementById('cname').value;
+  c.type=(document.querySelector('input[name="ctype"]:checked')?.value)||'Walk-in';
+  c.phone=document.getElementById('cphone').value;
+  c.email=document.getElementById('cemail').value;
+  c.gstin=document.getElementById('cgstin').value;
+  c.address=document.getElementById('caddress').value;
+  if(!isEdit){ c.since=todayISO(); c.balance=0; c.credit=0; state.customers.push(c); }
+  save(); closeModal(); toast(isEdit?'Customer updated':'Customer added'); router();
+}
+function deleteCustomer(id){ if(!confirm('Delete this customer?')) return; state.customers=state.customers.filter(c=>c.id!==id); save(); toast('Deleted','info'); router(); }
+
+/* ---------- Suppliers ---------- */
+function viewSuppliers(){
+  const list=state.suppliers;
+  return `
+  <div class="space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div><h1 class="text-2xl font-bold tracking-tight">Suppliers</h1><p class="text-stone-500 text-sm">${list.length} suppliers · ${fmt(sumPayables())} owed</p></div>
+      <button onclick="openSupplierModal()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Add Supplier</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      ${list.map(s=>{
+        const owed=state.purchases.filter(p=>p.supplierId===s.id && p.status==='unpaid').reduce((sum,p)=>sum+(p.total-p.paid),0);
+        const total=state.purchases.filter(p=>p.supplierId===s.id).reduce((sum,p)=>sum+p.total,0);
+        return `<div class="hover-lift bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800 flex items-center justify-center"><i data-lucide="truck" class="w-4 h-4 text-stone-600 dark:text-stone-300"></i></div>
+              <div class="min-w-0"><div class="font-semibold truncate">${s.name}</div><div class="text-xs text-stone-500">${s.terms} · ★ ${s.rating}</div></div>
+            </div>
+            <button onclick="openSupplierModal('${s.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div><div class="text-stone-500">Total purchases</div><div class="num font-semibold">${fmt(total)}</div></div>
+            <div><div class="text-stone-500">Outstanding</div><div class="num font-semibold ${owed>0?'text-amber-600':''}">${fmt(owed)}</div></div>
+          </div>
+          <div class="mt-3 text-xs text-stone-500 space-y-0.5">
+            <div class="flex items-center gap-1.5"><i data-lucide="phone" class="w-3 h-3"></i>${s.phone||'—'}</div>
+            <div class="flex items-center gap-1.5"><i data-lucide="mail" class="w-3 h-3"></i>${s.email||'—'}</div>
+            <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3 h-3"></i>${s.address||'—'}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+function openSupplierModal(id){
+  const s=id?findSupp(id):{id:uid('s_'),name:'',phone:'',email:'',gstin:'',address:'',terms:'Net 30',rating:5,balance:0};
+  showModal(`<div class="p-5 w-[460px] max-w-full">
+    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">${id?'Edit':'Add'} supplier</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <form onsubmit="event.preventDefault(); saveSupplier('${s.id}', ${id?true:false})" class="space-y-3 text-sm">
+      ${[['sname','Name',s.name,'text',true],['sphone','Phone',s.phone,'text'],['semail','Email',s.email,'email'],['sgstin','GSTIN',s.gstin,'text'],['saddress','Address',s.address,'text'],['sterms','Payment terms',s.terms,'text']].map(([id,label,val,t,req])=>`
+        <div><label class="text-xs font-medium text-stone-500">${label}</label><input id="${id}" type="${t}" value="${val||''}" ${req?'required':''} class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>`).join('')}
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save</button>
+      </div>
+    </form>
+  </div>`);
+}
+function saveSupplier(id,isEdit){
+  const s=isEdit?findSupp(id):{id};
+  s.name=document.getElementById('sname').value; s.phone=document.getElementById('sphone').value; s.email=document.getElementById('semail').value; s.gstin=document.getElementById('sgstin').value; s.address=document.getElementById('saddress').value; s.terms=document.getElementById('sterms').value;
+  if(!isEdit){ s.rating=5; s.balance=0; state.suppliers.push(s); }
+  save(); closeModal(); toast(isEdit?'Supplier updated':'Supplier added'); router();
+}
+
+/* ---------- Purchases ---------- */
+function viewPurchases(){
+  const list=[...state.purchases].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+  <div class="space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div><h1 class="text-2xl font-bold tracking-tight">Purchases</h1><p class="text-stone-500 text-sm">${list.length} bills · ${fmt(sumPayables())} payable</p></div>
+      <button onclick="openPurchaseModal()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> New Purchase Bill</button>
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider">
+            <tr><th class="px-4 py-2.5 text-left">Bill</th><th class="px-4 py-2.5 text-left">Date</th><th class="px-4 py-2.5 text-left">Supplier</th><th class="px-4 py-2.5 text-right">Total</th><th class="px-4 py-2.5 text-right">Paid</th><th class="px-4 py-2.5 text-left">Status</th></tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+            ${list.map(b=>`<tr class="row-hover">
+              <td class="px-4 py-2.5 num font-medium">${b.number}</td>
+              <td class="px-4 py-2.5 text-xs text-stone-500">${dateNice(b.date)}</td>
+              <td class="px-4 py-2.5">${findSupp(b.supplierId)?.name||'—'}</td>
+              <td class="px-4 py-2.5 num text-right font-semibold">${fmt(b.total)}</td>
+              <td class="px-4 py-2.5 num text-right">${fmt(b.paid)}</td>
+              <td class="px-4 py-2.5"><span class="text-xs px-2 py-0.5 rounded-md ${b.status==='paid'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30':'bg-amber-50 text-amber-700 dark:bg-amber-900/30'}">${b.status}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+function openPurchaseModal(){
+  showModal(`<div class="p-5 w-[640px] max-w-full">
+    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">New purchase bill</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <form onsubmit="event.preventDefault(); savePurchase()" class="space-y-3 text-sm">
+      <div class="grid grid-cols-3 gap-2">
+        <div><label class="text-xs font-medium text-stone-500">Bill #</label><input id="pbnum" value="BILL-${2000+state.purchases.length+1}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Date</label><input id="pbdate" type="date" value="${todayISO()}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Supplier</label><select id="pbsupp" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div><label class="text-xs font-medium text-stone-500">Product</label><select id="pbprod" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+        <div><label class="text-xs font-medium text-stone-500">Qty</label><input id="pbqty" type="number" value="10" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Unit cost</label><input id="pbcost" type="number" value="0" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="pbtax" type="number" value="18" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500">Paid now</label><input id="pbpaid" type="number" value="0" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      </div>
+      <div class="text-xs text-stone-500">Receiving stock will increase the product's quantity automatically.</div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save bill</button>
+      </div>
+    </form>
+  </div>`);
+}
+function savePurchase(){
+  const pid=document.getElementById('pbprod').value;
+  const p=findProd(pid);
+  const qty=Number(document.getElementById('pbqty').value||0);
+  const cost=Number(document.getElementById('pbcost').value||0);
+  const tax=Number(document.getElementById('pbtax').value||0);
+  const paid=Number(document.getElementById('pbpaid').value||0);
+  const sub=qty*cost; const taxA=sub*tax/100; const total=Math.round(sub+taxA);
+  const b={id:uid('po_'),number:document.getElementById('pbnum').value,date:document.getElementById('pbdate').value,supplierId:document.getElementById('pbsupp').value,lines:[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}],subtotal:sub,tax:taxA,total,paid,status:paid>=total?'paid':'unpaid'};
+  state.purchases.push(b);
+  if(p){ p.stock+=qty; p.cost=cost||p.cost; }
+  save(); closeModal(); toast('Purchase saved'); router();
+}
+
+/* ---------- Expenses ---------- */
+function viewExpenses(){
+  const list=[...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  const total=list.reduce((s,e)=>s+e.amount,0);
+  const byCat={}; list.forEach(e=>byCat[e.category]=(byCat[e.category]||0)+e.amount);
+  return `
+  <div class="space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div><h1 class="text-2xl font-bold tracking-tight">Expenses</h1><p class="text-stone-500 text-sm">${list.length} expenses · ${fmt(total)} total</p></div>
+      <button onclick="openExpenseModal()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Add Expense</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      ${Object.entries(byCat).map(([k,v])=>`<div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft"><div class="text-xs text-stone-500">${k}</div><div class="num text-lg font-semibold mt-1">${fmt(v)}</div></div>`).join('')}
+    </div>
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="overflow-x-auto scroll-thin">
+        <table class="w-full text-sm">
+          <thead class="bg-stone-50 dark:bg-[#0f0f10] text-stone-500 text-xs uppercase tracking-wider"><tr><th class="px-4 py-2.5 text-left">Date</th><th class="px-4 py-2.5 text-left">Category</th><th class="px-4 py-2.5 text-left">Note</th><th class="px-4 py-2.5 text-left">Method</th><th class="px-4 py-2.5 text-right">Amount</th><th></th></tr></thead>
+          <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+            ${list.map(e=>`<tr class="row-hover">
+              <td class="px-4 py-2.5 text-xs">${dateNice(e.date)}</td>
+              <td class="px-4 py-2.5"><span class="text-xs px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800">${e.category}</span></td>
+              <td class="px-4 py-2.5 text-stone-600 dark:text-stone-400">${e.note||''}</td>
+              <td class="px-4 py-2.5 text-xs">${e.method}</td>
+              <td class="px-4 py-2.5 num text-right font-semibold text-rose-600">- ${fmt(e.amount)}</td>
+              <td class="px-4 py-2.5 text-right"><button onclick="deleteExpense('${e.id}')" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+function openExpenseModal(){
+  showModal(`<div class="p-5 w-[420px] max-w-full">
+    <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">Add expense</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <form onsubmit="event.preventDefault(); saveExpense()" class="space-y-3 text-sm">
+      <div><label class="text-xs font-medium text-stone-500">Date</label><input id="edate" type="date" value="${todayISO()}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Category</label>
+        <select id="ecat" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${['Rent','Utilities','Salary','Internet','Marketing','Travel','Misc'].map(c=>`<option>${c}</option>`).join('')}</select>
+      </div>
+      <div><label class="text-xs font-medium text-stone-500">Amount</label><input id="eamt" type="number" required class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Method</label>
+        <select id="emeth" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${['Cash','Bank','UPI','Card'].map(c=>`<option>${c}</option>`).join('')}</select>
+      </div>
+      <div><label class="text-xs font-medium text-stone-500">Note</label><input id="enote" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button><button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save</button></div>
+    </form>
+  </div>`);
+}
+function saveExpense(){
+  const e={id:uid('e_'),date:document.getElementById('edate').value,category:document.getElementById('ecat').value,amount:Number(document.getElementById('eamt').value||0),method:document.getElementById('emeth').value,note:document.getElementById('enote').value};
+  state.expenses.push(e); save(); closeModal(); toast('Expense added'); router();
+}
+function deleteExpense(id){ if(!confirm('Delete?')) return; state.expenses=state.expenses.filter(e=>e.id!==id); save(); router(); }
+
+/* ---------- Reports ---------- */
+function viewReports(){
+  // P&L
+  const sales=state.invoices.reduce((s,i)=>s+i.subtotal,0);
+  const cogs=state.invoices.reduce((s,i)=>s+i.lines.reduce((x,l)=>x+l.qty*l.cost,0),0);
+  const opex=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const grossProfit=sales-cogs;
+  const netProfit=grossProfit-opex;
+
+  // Top items
+  const itemMap={};
+  state.invoices.forEach(i=>i.lines.forEach(l=>{ if(!itemMap[l.pid]) itemMap[l.pid]={name:l.name,qty:0,rev:0,profit:0}; itemMap[l.pid].qty+=l.qty; itemMap[l.pid].rev+=l.qty*l.price; itemMap[l.pid].profit+=l.qty*(l.price-l.cost); }));
+  const topItems=Object.values(itemMap).sort((a,b)=>b.rev-a.rev).slice(0,10);
+
+  // Top customers
+  const cMap={};
+  state.invoices.forEach(i=>{ if(!cMap[i.customerId]) cMap[i.customerId]={name:findCust(i.customerId)?.name||'—',rev:0,count:0}; cMap[i.customerId].rev+=i.total; cMap[i.customerId].count++; });
+  const topCust=Object.values(cMap).sort((a,b)=>b.rev-a.rev).slice(0,8);
+
+  window._afterRender=()=>{ drawPLChart(); drawDailyChart(); };
+  return `
+  <div class="space-y-5">
+    <div><h1 class="text-2xl font-bold tracking-tight">Reports</h1><p class="text-stone-500 text-sm">Live profit, sales, and inventory performance.</p></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+      ${[
+        {l:'Revenue',v:fmt(sales),c:'sky'},
+        {l:'COGS',v:fmt(cogs),c:'stone'},
+        {l:'Operating expenses',v:fmt(opex),c:'rose'},
+        {l:'Net profit',v:fmt(netProfit),c:netProfit>=0?'emerald':'rose'}
+      ].map(t=>`<div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft"><div class="text-xs text-stone-500">${t.l}</div><div class="num text-xl font-semibold mt-1">${t.v}</div></div>`).join('')}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+        <div class="text-sm font-semibold mb-3">Profit & Loss</div>
+        <div class="h-64"><canvas id="plChart"></canvas></div>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+        <div class="text-sm font-semibold mb-3">Daily revenue (30d)</div>
+        <div class="h-64"><canvas id="dailyChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-5 py-3 border-b border-stone-200 dark:border-stone-800 text-sm font-semibold">Top Items</div>
+        <table class="w-full text-sm"><thead class="bg-stone-50 dark:bg-[#0f0f10] text-xs text-stone-500"><tr><th class="px-4 py-2 text-left">Item</th><th class="px-4 py-2 text-right">Qty</th><th class="px-4 py-2 text-right">Revenue</th><th class="px-4 py-2 text-right">Profit</th></tr></thead>
+        <tbody class="divide-y divide-stone-100 dark:divide-stone-800">${topItems.map(i=>`<tr class="row-hover"><td class="px-4 py-2">${i.name}</td><td class="px-4 py-2 num text-right">${i.qty}</td><td class="px-4 py-2 num text-right">${fmt(i.rev)}</td><td class="px-4 py-2 num text-right text-emerald-600">${fmt(i.profit)}</td></tr>`).join('')}</tbody></table>
+      </div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-5 py-3 border-b border-stone-200 dark:border-stone-800 text-sm font-semibold">Top Customers</div>
+        <table class="w-full text-sm"><thead class="bg-stone-50 dark:bg-[#0f0f10] text-xs text-stone-500"><tr><th class="px-4 py-2 text-left">Customer</th><th class="px-4 py-2 text-right">Orders</th><th class="px-4 py-2 text-right">Lifetime</th></tr></thead>
+        <tbody class="divide-y divide-stone-100 dark:divide-stone-800">${topCust.map(c=>`<tr class="row-hover"><td class="px-4 py-2">${c.name}</td><td class="px-4 py-2 num text-right">${c.count}</td><td class="px-4 py-2 num text-right font-semibold">${fmt(c.rev)}</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
+      <div class="px-5 py-3 border-b border-stone-200 dark:border-stone-800 text-sm font-semibold flex items-center justify-between">
+        <span>Stock alert · Low / out of stock</span>
+        <button onclick="exportLowStockCSV()" class="text-xs px-2 py-1 rounded-md border border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-900">Export CSV</button>
+      </div>
+      <table class="w-full text-sm"><thead class="bg-stone-50 dark:bg-[#0f0f10] text-xs text-stone-500"><tr><th class="px-4 py-2 text-left">Product</th><th class="px-4 py-2 text-left">SKU</th><th class="px-4 py-2 text-right">Stock</th><th class="px-4 py-2 text-right">Reorder at</th></tr></thead>
+      <tbody class="divide-y divide-stone-100 dark:divide-stone-800">${lowStock().map(p=>`<tr class="row-hover"><td class="px-4 py-2">${p.name}</td><td class="px-4 py-2 num text-xs">${p.sku}</td><td class="px-4 py-2 num text-right text-rose-600 font-semibold">${p.stock}</td><td class="px-4 py-2 num text-right">${p.reorder}</td></tr>`).join('') || '<tr><td colspan="4" class="text-center py-6 text-stone-500 text-sm">All stock levels healthy ✨</td></tr>'}</tbody></table>
+    </div>
+  </div>`;
+}
+function drawPLChart(){
+  const sales=state.invoices.reduce((s,i)=>s+i.subtotal,0);
+  const cogs=state.invoices.reduce((s,i)=>s+i.lines.reduce((x,l)=>x+l.qty*l.cost,0),0);
+  const opex=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const ctx=document.getElementById('plChart'); if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:['Revenue','COGS','OpEx','Net'],datasets:[{data:[sales,cogs,opex,sales-cogs-opex],backgroundColor:['#0ea5e9','#a8a29e','#f43f5e','#10b981'],borderRadius:8}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y)}}},scales:{y:{ticks:{callback:v=>SYM()+(v/1000).toFixed(0)+'k'}}},maintainAspectRatio:false}});
+}
+function drawDailyChart(){
+  const arr=[]; for(let d=29;d>=0;d--){const day=new Date(); day.setDate(day.getDate()-d); const k=day.toISOString().slice(0,10); arr.push({k,v:state.invoices.filter(i=>i.date===k).reduce((s,i)=>s+i.total,0)});}
+  const ctx=document.getElementById('dailyChart'); if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:arr.map(a=>a.k.slice(8,10)),datasets:[{data:arr.map(a=>a.v),backgroundColor:'#6366f1',borderRadius:4}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y)}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>SYM()+(v/1000).toFixed(0)+'k'}}},maintainAspectRatio:false}});
+}
+function exportLowStockCSV(){
+  const rows=[['Product','SKU','Stock','Reorder']].concat(lowStock().map(p=>[p.name,p.sku,p.stock,p.reorder]));
+  const csv=rows.map(r=>r.map(x=>`"${x}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='low-stock.csv'; a.click();
+  toast('CSV downloaded');
+}
+
+/* ---------- Settings ---------- */
+function viewSettings(){
+  const o=state.org;
+  if(isTeam()){
+    return `
+    <div class="space-y-5">
+      <div><h1 class="text-2xl font-bold tracking-tight">Settings</h1><p class="text-stone-500 text-sm">Personal preferences for ${currentUser()}.</p></div>
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft max-w-md">
+        <div class="text-sm font-semibold mb-3">Appearance</div>
+        <button onclick="toggleDark()" class="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center gap-2 hover:bg-stone-50 dark:hover:bg-stone-900"><i data-lucide="moon-star" class="w-4 h-4"></i><span class="dark:hidden">Switch to dark mode</span><span class="hidden dark:inline">Switch to light mode</span></button>
+        <div class="mt-4 text-xs text-stone-500">Other settings (business profile, taxes, security) are restricted to the founder.</div>
+        <button onclick="logout()" class="mt-4 w-full px-3 py-2 rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 text-sm flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-900/20"><i data-lucide="log-out" class="w-4 h-4"></i> Log out</button>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="space-y-5">
+    <div><h1 class="text-2xl font-bold tracking-tight">Settings</h1><p class="text-stone-500 text-sm">Business profile, currency, taxes, security, team, backup.</p></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+        <div class="text-sm font-semibold mb-3">Business profile</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          ${[['oname','Business name',o.name],['oaddr','Address',o.address],['ophone','Phone',o.phone],['oemail','Email',o.email],['ogstin','GSTIN / Tax ID',o.gstin],['ofooter','Receipt footer',o.footer]].map(([id,l,v])=>`<div class="${id==='oaddr'||id==='ofooter'?'md:col-span-2':''}"><label class="text-xs font-medium text-stone-500">${l}</label><input id="${id}" value="${v||''}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>`).join('')}
+          <div><label class="text-xs font-medium text-stone-500">Currency symbol</label><input id="osym" value="${o.symbol}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+          <div><label class="text-xs font-medium text-stone-500">Tax label</label><input id="otax" value="${o.taxLabel}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+        </div>
+        <div class="mt-3 flex justify-end"><button onclick="saveOrg()" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save changes</button></div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+          <div class="text-sm font-semibold mb-3 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-violet-600"></i> Founder security</div>
+          <div class="space-y-3 text-sm">
+            <div class="grid grid-cols-1 gap-2">
+              <div><label class="text-xs font-medium text-stone-500">Current password</label><input id="oldPwd" type="password" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+              <div><label class="text-xs font-medium text-stone-500">New password</label><input id="newPwd" type="password" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+              <button onclick="doChangePwd()" class="self-end px-3 py-2 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-medium">Change password</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+          <div class="text-sm font-semibold mb-3 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-emerald-600"></i> Team members</div>
+          <div class="space-y-2 text-sm">
+            ${state.team.map(m=>`<div class="flex items-center gap-2 p-2 rounded-lg bg-stone-50 dark:bg-stone-900">
+              <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xs font-semibold">${m.name[0].toUpperCase()}</div>
+              <div class="flex-1 truncate">${m.name}</div>
+              <button onclick="removeTeam('${m.id}')" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>`).join('') || '<div class="text-xs text-stone-500 p-2">No team members yet.</div>'}
+            <div class="flex gap-2 pt-1">
+              <input id="newTeam" placeholder="New team member name" class="flex-1 px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 text-sm" />
+              <button onclick="addTeam()" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Add</button>
+            </div>
+            <div class="text-[11px] text-stone-500">Team members log in by tapping their name — no password needed. They can only create bills and view inventory.</div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+          <div class="text-sm font-semibold mb-3">Data & backup</div>
+          <div class="space-y-2">
+            <button onclick="exportData()" class="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center gap-2 hover:bg-stone-50 dark:hover:bg-stone-900"><i data-lucide="download" class="w-4 h-4"></i> Backup all data (JSON)</button>
+            <button onclick="importData()" class="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center gap-2 hover:bg-stone-50 dark:hover:bg-stone-900"><i data-lucide="upload" class="w-4 h-4"></i> Restore from backup</button>
+            <button onclick="resetSeed()" class="w-full px-3 py-2 rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 text-sm flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-900/20"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset to demo data</button>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
+          <div class="text-sm font-semibold mb-3">About BizOS</div>
+          <p class="text-xs text-stone-500 leading-relaxed">BizOS runs entirely in your browser. All your data stays on this device — no servers, no signups, no subscriptions. Backup regularly. ⌘K to search anywhere. Press <span class="kbd">N</span> for new bill.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+async function doChangePwd(){
+  const o=document.getElementById('oldPwd').value, n=document.getElementById('newPwd').value;
+  if(!o||!n||n.length<4) return toast('Need old + new password (4+ chars)','err');
+  await changeFounderPwd(o,n);
+  document.getElementById('oldPwd').value=''; document.getElementById('newPwd').value='';
+}
+function addTeam(){
+  const n=document.getElementById('newTeam').value.trim(); if(!n) return;
+  state.team.push({id:uid('u_'),name:n}); save(); toast('Team member added'); router();
+}
+function removeTeam(id){
+  if(!confirm('Remove this team member?')) return;
+  state.team=state.team.filter(t=>t.id!==id); save(); router();
+}
+function saveOrg(){
+  state.org.name=document.getElementById('oname').value; state.org.address=document.getElementById('oaddr').value; state.org.phone=document.getElementById('ophone').value; state.org.email=document.getElementById('oemail').value; state.org.gstin=document.getElementById('ogstin').value; state.org.footer=document.getElementById('ofooter').value; state.org.symbol=document.getElementById('osym').value; state.org.taxLabel=document.getElementById('otax').value;
+  save(); toast('Saved');
+}
+function exportData(){
+  const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state,null,2)); a.download='bizos-backup-'+todayISO()+'.json'; a.click(); toast('Backup downloaded');
+}
+function importData(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ state=JSON.parse(r.result); save(); toast('Restored'); router(); }catch(err){ toast('Invalid file','err'); } }; r.readAsText(f); };
+  inp.click();
+}
+function resetSeed(){ if(!confirm('Reset all data to demo? This will erase your changes.')) return; state=seed(); save(); toast('Reset to demo'); router(); }
+
+/* ---------- Modal ---------- */
+function showModal(html){
+  document.getElementById('modalMount').innerHTML=`<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onclick="if(event.target===this) closeModal()"><div class="bg-white dark:bg-[#141416] rounded-2xl shadow-pop border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto scroll-thin pop-in">${html}</div></div>`;
+  lucide.createIcons();
+}
+function closeModal(){ document.getElementById('modalMount').innerHTML=''; }
+
+/* ---------- Command Palette ---------- */
+function openCmdK(){ document.getElementById('cmdK').classList.remove('hidden'); document.getElementById('cmdKInput').value=''; renderCmdK(); setTimeout(()=>document.getElementById('cmdKInput').focus(),50); }
+function closeCmdK(){ document.getElementById('cmdK').classList.add('hidden'); }
+function renderCmdK(){
+  const q=(document.getElementById('cmdKInput').value||'').toLowerCase().trim();
+  const actions=[
+    {l:'Go to Dashboard',i:'layout-dashboard',fn:()=>{ go('#/dashboard'); closeCmdK(); }},
+    {l:'New Invoice',i:'plus-square',fn:()=>{ go('#/sales/new'); closeCmdK(); }},
+    {l:'Add Product',i:'package-plus',fn:()=>{ go('#/inventory'); closeCmdK(); setTimeout(openProductModal,150); }},
+    {l:'Add Customer',i:'user-plus',fn:()=>{ go('#/customers'); closeCmdK(); setTimeout(openCustomerModal,150); }},
+    {l:'Add Expense',i:'banknote',fn:()=>{ go('#/expenses'); closeCmdK(); setTimeout(openExpenseModal,150); }},
+    {l:'Open Reports',i:'bar-chart-3',fn:()=>{ go('#/reports'); closeCmdK(); }},
+    {l:'Open Settings',i:'settings',fn:()=>{ go('#/settings'); closeCmdK(); }},
+    {l:'Toggle dark mode',i:'moon-star',fn:()=>{ toggleDark(); closeCmdK(); }}
+  ].filter(a=>!q || a.l.toLowerCase().includes(q));
+  const prods=q ? state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)).slice(0,4) : [];
+  const custs=q ? state.customers.filter(c=>c.name.toLowerCase().includes(q)).slice(0,4) : [];
+  const invs=q ? state.invoices.filter(i=>i.number.toLowerCase().includes(q)).slice(0,4) : [];
+  const sec=(t,arr,html)=> arr.length?`<div class="px-2 pt-2 pb-1 text-[11px] uppercase tracking-wider text-stone-500">${t}</div>${arr.map(html).join('')}`:'';
+  document.getElementById('cmdKResults').innerHTML =
+    sec('Actions',actions,(a,idx)=>`<button onclick='(${a.fn.toString()})()' class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="${a.i}" class="w-4 h-4 text-stone-500"></i>${a.l}</button>`)+
+    sec('Products',prods,p=>`<button onclick="closeCmdK(); go('#/inventory')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-stone-500"></i>${p.name}<span class="ml-auto text-xs text-stone-500 num">${p.sku}</span></button>`)+
+    sec('Customers',custs,c=>`<button onclick="closeCmdK(); go('#/customers')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-stone-500"></i>${c.name}</button>`)+
+    sec('Invoices',invs,i=>`<button onclick="closeCmdK(); openInvoiceView('${i.id}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4 text-stone-500"></i>${i.number}<span class="ml-auto text-xs text-stone-500 num">${fmt(i.total)}</span></button>`);
+  lucide.createIcons();
+}
+
+/* ---------- Co-Pilot ---------- */
+function appendCopilot(role,html){
+  const c=document.getElementById('copilotChat');
+  const div=document.createElement('div');
+  div.className=role==='me' ? 'flex justify-end' : 'flex';
+  div.innerHTML = role==='me'
+    ? `<div class="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm bg-brand-600 text-white text-sm">${html}</div>`
+    : `<div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-tl-sm bg-stone-100 dark:bg-stone-900 text-sm">${html}</div>`;
+  c.appendChild(div); c.scrollTop=c.scrollHeight; lucide.createIcons();
+}
+function askCopilot(q){
+  appendCopilot('me', q);
+  const a=answerCopilot(q.toLowerCase());
+  setTimeout(()=>appendCopilot('ai',a),300);
+}
+function answerCopilot(q){
+  if(q.includes('hi')||q.includes('hello')||q.includes('what can you')){
+    return `I can answer questions about your business in real time. Try:<br>• <em>"Total sales today"</em><br>• <em>"Best selling item"</em><br>• <em>"Who owes me money?"</em><br>• <em>"Low stock items"</em><br>• <em>"Profit this month"</em>`;
+  }
+  if(q.includes('today') && (q.includes('sale')||q.includes('sales'))){
+    const t=todaySales(); const c=state.invoices.filter(i=>i.date===todayISO()).length;
+    return `Today's sales: <b class="num">${fmt(t)}</b> across <b>${c}</b> invoice${c===1?'':'s'}.`;
+  }
+  if(q.includes('best') || q.includes('top')){
+    const m={}; state.invoices.forEach(i=>i.lines.forEach(l=>{ m[l.pid]=(m[l.pid]||0)+l.qty*l.price; }));
+    const top=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+    if(!top) return 'No sales yet.';
+    return `Best seller is <b>${findProd(top[0])?.name||'—'}</b> with <b class="num">${fmt(top[1])}</b> in revenue.`;
+  }
+  if(q.includes('low stock')||q.includes('out of stock')||q.includes('reorder')){
+    const ls=lowStock();
+    if(!ls.length) return 'All stock levels look healthy ✨';
+    return `<b>${ls.length}</b> products are low on stock:<br>` + ls.slice(0,5).map(p=>`• ${p.name} — only ${p.stock} ${p.unit}`).join('<br>') + (ls.length>5?`<br>…and ${ls.length-5} more`:'');
+  }
+  if(q.includes('owe')||q.includes('receivable')||q.includes('outstanding')){
+    const u=state.invoices.filter(i=>i.status==='unpaid');
+    if(!u.length) return 'No outstanding invoices 🎉';
+    return `<b>${fmt(sumDue())}</b> across <b>${u.length}</b> unpaid invoices:<br>` + u.slice(0,5).map(i=>`• ${findCust(i.customerId)?.name||'—'} — ${fmt(i.total-i.paid)}`).join('<br>');
+  }
+  if(q.includes('profit')||q.includes('margin')){
+    const sales=state.invoices.reduce((s,i)=>s+i.subtotal,0);
+    const cogs=state.invoices.reduce((s,i)=>s+i.lines.reduce((x,l)=>x+l.qty*l.cost,0),0);
+    const opex=state.expenses.reduce((s,e)=>s+e.amount,0);
+    return `Net profit: <b class="num">${fmt(sales-cogs-opex)}</b> (Revenue ${fmt(sales)} − COGS ${fmt(cogs)} − OpEx ${fmt(opex)}).`;
+  }
+  if(q.includes('cash')||q.includes('bank')||q.includes('balance')){
+    return `Estimated cash + bank position: <b class="num">${fmt(cashIn())}</b>.`;
+  }
+  if(q.includes('customer') && (q.includes('how many')||q.includes('count'))){
+    return `You have <b>${state.customers.length}</b> customers.`;
+  }
+  if(q.includes('product') && (q.includes('how many')||q.includes('count'))){
+    return `You stock <b>${state.products.length}</b> products with total inventory value of <b class="num">${fmt(state.products.reduce((s,p)=>s+p.stock*p.cost,0))}</b>.`;
+  }
+  return `I can pull this from your data, but I'm not sure I understood. Try asking about <em>sales today</em>, <em>profit</em>, <em>low stock</em>, <em>who owes me money</em>, or <em>best selling item</em>.`;
+}
+
+/* ---------- Keyboard ---------- */
+window.addEventListener('keydown',(e)=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); openCmdK(); }
+  if(e.key==='Escape'){ closeCmdK(); closeModal(); }
+  if(!e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA' && document.activeElement.tagName!=='SELECT'){
+    if(e.key==='n') go('#/sales/new');
+    if(e.key==='?') toast('Shortcuts: ⌘K search · N new invoice · Esc close','info');
+  }
+});
+
+/* ---------- Boot ---------- */
+router();
+lucide.createIcons();
+tickClock();
+setInterval(tickClock, 1000);
+</script>
+</body>
+</html>
