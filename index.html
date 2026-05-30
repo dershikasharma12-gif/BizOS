@@ -958,7 +958,7 @@ function ensureWalkInCustomer(){
 }
 function newDraft(){
   ensureWalkInCustomer();
-  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
+  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxEnabled:true,taxRateOverride:'',lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
 }
 function viewNewInvoice(){
   if(!_draft) _draft=newDraft();
@@ -999,6 +999,27 @@ function viewNewInvoice(){
                 ${state.customers.map(c=>`<option value="${c.id}" ${c.id===_draft.customerId?'selected':''}>${c.name} · ${c.type||'Walk-in'}</option>`).join('')}
               </select>
             </div>
+            <div>
+              <label class="text-xs font-medium text-stone-500">Customer Type</label>
+              <select onchange="_draft.customerType=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
+                <option value="Walk-in" ${(_draft.customerType||'Walk-in')==='Walk-in'?'selected':''}>🚶 Walk-in</option>
+                <option value="Online" ${_draft.customerType==='Online'?'selected':''}>🌐 Online</option>
+              </select>
+            </div>
+            ${isFounder()?`<div>
+              <label class="text-xs font-medium text-stone-500">Tax</label>
+              <div class="mt-1 flex items-center gap-2">
+                <button type="button" onclick="_draft.taxEnabled=!(_draft.taxEnabled!==false); this.dataset.on=_draft.taxEnabled!==false; document.getElementById('taxRateWrap').style.display=_draft.taxEnabled!==false?'':'none'; renderTotalsPanel();" data-on="${_draft.taxEnabled!==false}" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${_draft.taxEnabled!==false?'bg-brand-600':'bg-stone-300 dark:bg-stone-700'}" style="flex-shrink:0">
+                  <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${_draft.taxEnabled!==false?'translate-x-5':'translate-x-0'}"></span>
+                </button>
+                <span class="text-sm text-stone-600 dark:text-stone-400">${_draft.taxEnabled!==false?'Tax on':'Tax off'}</span>
+              </div>
+              <div id="taxRateWrap" style="${_draft.taxEnabled!==false?'':'display:none'}" class="mt-2 flex items-center gap-2">
+                <input id="taxRateOverride" type="number" min="0" max="100" step="0.5" placeholder="Use product rates" value="${_draft.taxRateOverride||''}" oninput="_draft.taxRateOverride=this.value===''?'':Number(this.value); renderTotalsPanel();" class="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
+                <span class="text-sm text-stone-500 shrink-0">%</span>
+              </div>
+              <p class="text-xs text-stone-400 mt-1">${_draft.taxEnabled!==false?'Leave blank to use per-product rates':''}</p>
+            </div>`:''}
             <div>
               <label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i> Customer phone <span class="text-stone-400">(for WhatsApp)</span></label>
               <input type="tel" inputmode="tel" placeholder="+91 98765 43210" value="${_draft.phoneOverride||''}" oninput="_draft.phoneOverride=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
@@ -1061,7 +1082,11 @@ function viewNewInvoice(){
 function totalsCalc(){
   if(!_draft) return {sub:0,tax:0,disc:0,total:0};
   const sub=_draft.lines.reduce((s,l)=>s+l.qty*l.price,0);
-  const tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*l.tax/100,0);
+  let tax=0;
+  if(_draft.taxEnabled!==false){
+    const override=(_draft.taxRateOverride!=null && _draft.taxRateOverride!=='') ? Number(_draft.taxRateOverride) : null;
+    tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*(override!=null?override:l.tax)/100,0);
+  }
   const disc=Number(_draft.discount||0);
   const total=Math.round(sub+tax-disc);
   return {sub,tax,disc,total};
@@ -1290,7 +1315,7 @@ function openInvoiceView(id){
       <div>
         <div class="text-xs text-stone-500 uppercase tracking-wider">${i.status==='paid'?'Receipt':'Invoice'}</div>
         <div class="text-xl font-bold num">${i.number}</div>
-        <div class="text-xs text-stone-500 flex items-center gap-2 mt-0.5"><span>${dateNice(i.date)} · ${c?.name||'—'}</span>${c?custTypeBadge(c.type):''}</div>
+        <div class="text-xs text-stone-500 flex items-center gap-2 mt-0.5"><span>${dateNice(i.date)} · ${c?.name||'—'}</span>${c?custTypeBadge(c.type):''}<span class="px-1.5 py-0.5 rounded text-xs ${(i.customerType||'Walk-in')==='Online'?'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300':'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}">${(i.customerType||'Walk-in')==='Online'?'🌐 Online':'🚶 Walk-in'}</span></div>
       </div>
       <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
@@ -1305,7 +1330,7 @@ function openInvoiceView(id){
     <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
       <div class="space-y-1">
         <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(i.subtotal)}</span></div>
-        <div class="flex justify-between"><span class="text-stone-500">Tax</span><span class="num">${fmt(i.tax)}</span></div>
+        <div class="flex justify-between"><span class="text-stone-500">Tax${i.taxEnabled===false?' (none)':i.taxRateOverride?` (${i.taxRateOverride}%)':''}</span><span class="num">${fmt(i.tax)}</span></div>
         <div class="flex justify-between font-bold border-t border-stone-200 dark:border-stone-800 pt-1"><span>Total</span><span class="num">${fmt(i.total)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Paid (${i.payment})</span><span class="num">${fmt(i.paid)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Balance</span><span class="num">${fmt(i.total-i.paid)}</span></div>
@@ -1399,7 +1424,7 @@ function buildReceiptText(i){
     '────────────',
     `*${i.status==='paid'?'TAX RECEIPT':'INVOICE'} ${i.number}*`,
     `Date: ${dateNice(i.date)}`,
-    `Bill to: ${c?.name||'Walk-in customer'}`,
+    `Bill to: ${c?.name||'Walk-in customer'} (${i.customerType||'Walk-in'})`,
     '',
     '*Items:*',
     lines,
