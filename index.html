@@ -1411,8 +1411,7 @@ function buildReceiptText(i){
     `Paid (${i.payment}): ${fmt(i.paid)}`,
     due>0?`Balance due: ${fmt(due)}`:'',
     '',
-    state.org.footer||'',
-    '— Sent via BizOS'
+    state.org.footer||''
   ].filter(Boolean).join('\n');
 }
 function _waOpen(phone, text){
