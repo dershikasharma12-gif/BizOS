@@ -1006,20 +1006,7 @@ function viewNewInvoice(){
                 <option value="Online" ${_draft.customerType==='Online'?'selected':''}>🌐 Online</option>
               </select>
             </div>
-            ${isFounder()?`<div>
-              <label class="text-xs font-medium text-stone-500">Tax</label>
-              <div class="mt-1 flex items-center gap-2">
-                <button type="button" onclick="_draft.taxEnabled=!(_draft.taxEnabled!==false); this.dataset.on=_draft.taxEnabled!==false; document.getElementById('taxRateWrap').style.display=_draft.taxEnabled!==false?'':'none'; renderTotalsPanel();" data-on="${_draft.taxEnabled!==false}" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${_draft.taxEnabled!==false?'bg-brand-600':'bg-stone-300 dark:bg-stone-700'}" style="flex-shrink:0">
-                  <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${_draft.taxEnabled!==false?'translate-x-5':'translate-x-0'}"></span>
-                </button>
-                <span class="text-sm text-stone-600 dark:text-stone-400">${_draft.taxEnabled!==false?'Tax on':'Tax off'}</span>
-              </div>
-              <div id="taxRateWrap" style="${_draft.taxEnabled!==false?'':'display:none'}" class="mt-2 flex items-center gap-2">
-                <input id="taxRateOverride" type="number" min="0" max="100" step="0.5" placeholder="Use product rates" value="${_draft.taxRateOverride||''}" oninput="_draft.taxRateOverride=this.value===''?'':Number(this.value); renderTotalsPanel();" class="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
-                <span class="text-sm text-stone-500 shrink-0">%</span>
-              </div>
-              <p class="text-xs text-stone-400 mt-1">${_draft.taxEnabled!==false?'Leave blank to use per-product rates':''}</p>
-            </div>`:''}
+            ${isFounder()?renderTaxControls():''}
             <div>
               <label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i> Customer phone <span class="text-stone-400">(for WhatsApp)</span></label>
               <input type="tel" inputmode="tel" placeholder="+91 98765 43210" value="${_draft.phoneOverride||''}" oninput="_draft.phoneOverride=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
@@ -1078,6 +1065,27 @@ function viewNewInvoice(){
       <button onclick="saveDraft('print')" class="flex-1 px-3 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium flex items-center justify-center gap-1"><i data-lucide="printer" class="w-4 h-4"></i> Print</button>
     </div>
   </div>`;
+}
+function renderTaxControls(){
+  const on = _draft.taxEnabled !== false;
+  const toggleBg = on ? 'background:#6366f1' : 'background:#d1d5db';
+  const thumbPos = on ? 'transform:translateX(20px)' : 'transform:translateX(0)';
+  const rateDisplay = on ? '' : 'display:none';
+  const rateVal = _draft.taxRateOverride || '';
+  return '<div>'
+    + '<label class="text-xs font-medium text-stone-500">Tax</label>'
+    + '<div class="mt-1 flex items-center gap-2">'
+    + '<button type="button" onclick="_draft.taxEnabled=!(_draft.taxEnabled!==false);document.getElementById(\'taxToggleThumb\').style.transform=_draft.taxEnabled!==false?\'translateX(20px)\':\'translateX(0)\';document.getElementById(\'taxToggleBtn\').style.background=_draft.taxEnabled!==false?\'#6366f1\':\'#d1d5db\';document.getElementById(\'taxRateWrap\').style.display=_draft.taxEnabled!==false?\'\':\' none\';document.getElementById(\'taxToggleLabel\').textContent=_draft.taxEnabled!==false?\'Tax on\':\'Tax off\';renderTotalsPanel();" id="taxToggleBtn" style="position:relative;display:inline-flex;height:24px;width:44px;border-radius:9999px;border:2px solid transparent;cursor:pointer;transition:background 0.2s;' + toggleBg + '">'
+    + '<span id="taxToggleThumb" style="pointer-events:none;display:inline-block;height:20px;width:20px;border-radius:9999px;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 0.2s;' + thumbPos + '"></span>'
+    + '</button>'
+    + '<span id="taxToggleLabel" class="text-sm text-stone-600 dark:text-stone-400">' + (on ? 'Tax on' : 'Tax off') + '</span>'
+    + '</div>'
+    + '<div id="taxRateWrap" style="margin-top:8px;display:flex;align-items:center;gap:8px;' + rateDisplay + '">'
+    + '<input id="taxRateOverride" type="number" min="0" max="100" step="0.5" placeholder="Use product rates" value="' + rateVal + '" oninput="_draft.taxRateOverride=this.value===\'\'?\'\':(+this.value);renderTotalsPanel();" class="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />'
+    + '<span class="text-sm text-stone-500" style="white-space:nowrap">%</span>'
+    + '</div>'
+    + '<p class="text-xs text-stone-400 mt-1">' + (on ? 'Leave blank to use per-product rates' : '') + '</p>'
+    + '</div>';
 }
 function totalsCalc(){
   if(!_draft) return {sub:0,tax:0,disc:0,total:0};
@@ -1330,7 +1338,7 @@ function openInvoiceView(id){
     <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
       <div class="space-y-1">
         <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(i.subtotal)}</span></div>
-        <div class="flex justify-between"><span class="text-stone-500">Tax${i.taxEnabled===false?' (none)':i.taxRateOverride?` (${i.taxRateOverride}%)':''}</span><span class="num">${fmt(i.tax)}</span></div>
+        <div class="flex justify-between"><span class="text-stone-500">Tax${i.taxEnabled===false?' (none)':i.taxRateOverride?' ('+i.taxRateOverride+'%)':'' }</span><span class="num">${fmt(i.tax)}</span></div>
         <div class="flex justify-between font-bold border-t border-stone-200 dark:border-stone-800 pt-1"><span>Total</span><span class="num">${fmt(i.total)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Paid (${i.payment})</span><span class="num">${fmt(i.paid)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Balance</span><span class="num">${fmt(i.total-i.paid)}</span></div>
@@ -2177,91 +2185,4 @@ function renderCmdK(){
     {l:'Open Reports',i:'bar-chart-3',fn:()=>{ go('#/reports'); closeCmdK(); }},
     {l:'Open Settings',i:'settings',fn:()=>{ go('#/settings'); closeCmdK(); }},
     {l:'Toggle dark mode',i:'moon-star',fn:()=>{ toggleDark(); closeCmdK(); }}
-  ].filter(a=>!q || a.l.toLowerCase().includes(q));
-  const prods=q ? state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)).slice(0,4) : [];
-  const custs=q ? state.customers.filter(c=>c.name.toLowerCase().includes(q)).slice(0,4) : [];
-  const invs=q ? state.invoices.filter(i=>i.number.toLowerCase().includes(q)).slice(0,4) : [];
-  const sec=(t,arr,html)=> arr.length?`<div class="px-2 pt-2 pb-1 text-[11px] uppercase tracking-wider text-stone-500">${t}</div>${arr.map(html).join('')}`:'';
-  document.getElementById('cmdKResults').innerHTML =
-    sec('Actions',actions,(a,idx)=>`<button onclick='(${a.fn.toString()})()' class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="${a.i}" class="w-4 h-4 text-stone-500"></i>${a.l}</button>`)+
-    sec('Products',prods,p=>`<button onclick="closeCmdK(); go('#/inventory')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-stone-500"></i>${p.name}<span class="ml-auto text-xs text-stone-500 num">${p.sku}</span></button>`)+
-    sec('Customers',custs,c=>`<button onclick="closeCmdK(); go('#/customers')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-stone-500"></i>${c.name}</button>`)+
-    sec('Invoices',invs,i=>`<button onclick="closeCmdK(); openInvoiceView('${i.id}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4 text-stone-500"></i>${i.number}<span class="ml-auto text-xs text-stone-500 num">${fmt(i.total)}</span></button>`);
-  lucide.createIcons();
-}
-
-/* ---------- Co-Pilot ---------- */
-function appendCopilot(role,html){
-  const c=document.getElementById('copilotChat');
-  const div=document.createElement('div');
-  div.className=role==='me' ? 'flex justify-end' : 'flex';
-  div.innerHTML = role==='me'
-    ? `<div class="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm bg-brand-600 text-white text-sm">${html}</div>`
-    : `<div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-tl-sm bg-stone-100 dark:bg-stone-900 text-sm">${html}</div>`;
-  c.appendChild(div); c.scrollTop=c.scrollHeight; lucide.createIcons();
-}
-function askCopilot(q){
-  appendCopilot('me', q);
-  const a=answerCopilot(q.toLowerCase());
-  setTimeout(()=>appendCopilot('ai',a),300);
-}
-function answerCopilot(q){
-  if(q.includes('hi')||q.includes('hello')||q.includes('what can you')){
-    return `I can answer questions about your business in real time. Try:<br>• <em>"Total sales today"</em><br>• <em>"Best selling item"</em><br>• <em>"Who owes me money?"</em><br>• <em>"Low stock items"</em><br>• <em>"Profit this month"</em>`;
-  }
-  if(q.includes('today') && (q.includes('sale')||q.includes('sales'))){
-    const t=todaySales(); const c=state.invoices.filter(i=>i.date===todayISO()).length;
-    return `Today's sales: <b class="num">${fmt(t)}</b> across <b>${c}</b> invoice${c===1?'':'s'}.`;
-  }
-  if(q.includes('best') || q.includes('top')){
-    const m={}; state.invoices.forEach(i=>i.lines.forEach(l=>{ m[l.pid]=(m[l.pid]||0)+l.qty*l.price; }));
-    const top=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
-    if(!top) return 'No sales yet.';
-    return `Best seller is <b>${findProd(top[0])?.name||'—'}</b> with <b class="num">${fmt(top[1])}</b> in revenue.`;
-  }
-  if(q.includes('low stock')||q.includes('out of stock')||q.includes('reorder')){
-    const ls=lowStock();
-    if(!ls.length) return 'All stock levels look healthy ✨';
-    return `<b>${ls.length}</b> products are low on stock:<br>` + ls.slice(0,5).map(p=>`• ${p.name} — only ${p.stock} ${p.unit}`).join('<br>') + (ls.length>5?`<br>…and ${ls.length-5} more`:'');
-  }
-  if(q.includes('owe')||q.includes('receivable')||q.includes('outstanding')){
-    const u=state.invoices.filter(i=>i.status==='unpaid');
-    if(!u.length) return 'No outstanding invoices 🎉';
-    return `<b>${fmt(sumDue())}</b> across <b>${u.length}</b> unpaid invoices:<br>` + u.slice(0,5).map(i=>`• ${findCust(i.customerId)?.name||'—'} — ${fmt(i.total-i.paid)}`).join('<br>');
-  }
-  if(q.includes('profit')||q.includes('margin')){
-    const sales=state.invoices.reduce((s,i)=>s+i.subtotal,0);
-    const cogs=state.invoices.reduce((s,i)=>s+i.lines.reduce((x,l)=>x+l.qty*l.cost,0),0);
-    const opex=state.expenses.reduce((s,e)=>s+e.amount,0);
-    return `Net profit: <b class="num">${fmt(sales-cogs-opex)}</b> (Revenue ${fmt(sales)} − COGS ${fmt(cogs)} − OpEx ${fmt(opex)}).`;
-  }
-  if(q.includes('cash')||q.includes('bank')||q.includes('balance')){
-    return `Estimated cash + bank position: <b class="num">${fmt(cashIn())}</b>.`;
-  }
-  if(q.includes('customer') && (q.includes('how many')||q.includes('count'))){
-    return `You have <b>${state.customers.length}</b> customers.`;
-  }
-  if(q.includes('product') && (q.includes('how many')||q.includes('count'))){
-    return `You stock <b>${state.products.length}</b> products with total inventory value of <b class="num">${fmt(state.products.reduce((s,p)=>s+p.stock*p.cost,0))}</b>.`;
-  }
-  return `I can pull this from your data, but I'm not sure I understood. Try asking about <em>sales today</em>, <em>profit</em>, <em>low stock</em>, <em>who owes me money</em>, or <em>best selling item</em>.`;
-}
-
-/* ---------- Keyboard ---------- */
-window.addEventListener('keydown',(e)=>{
-  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); openCmdK(); }
-  if(e.key==='Escape'){ closeCmdK(); closeModal(); }
-  if(!e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA' && document.activeElement.tagName!=='SELECT'){
-    if(e.key==='n') go('#/sales/new');
-    if(e.key==='?') toast('Shortcuts: ⌘K search · N new invoice · Esc close','info');
-  }
-});
-
-/* ---------- Boot ---------- */
-router();
-lucide.createIcons();
-tickClock();
-setInterval(tickClock, 1000);
-</script>
-</body>
-</html>
+  ].filter(
