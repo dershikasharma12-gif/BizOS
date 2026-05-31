@@ -911,8 +911,7 @@ function renderSalesRows(list){
       <td class="px-4 py-2.5 text-right" onclick="event.stopPropagation()">
         <button onclick="printInvoice('${i.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900" title="Print"><i data-lucide="printer" class="w-4 h-4"></i></button>
         <button onclick="shareWhatsApp('${i.id}')" class="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600" title="WhatsApp"><i data-lucide="message-circle" class="w-4 h-4"></i></button>
-        ${isFounder()?`<button onclick="editSale('${i.id}')" class="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600" title="Edit"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-        <button onclick="deleteSale('${i.id}')" class="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}
+        ${isFounder()?'<button onclick="editSale(\''+i.id+'\')" class="p-1.5 rounded-md hover:bg-blue-50 text-blue-600" title="Edit"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteSale(\''+i.id+'\')" class="p-1.5 rounded-md hover:bg-rose-50 text-rose-500" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>':''}
       </td>
     </tr>`;
   }).join('');
@@ -931,21 +930,41 @@ function filterSales(){
 }
 
 /* ---------- New Invoice ---------- */
+function renderTaxControls(){
+  var on=_draft.taxEnabled!==false;
+  var bg=on?'background:#6366f1':'background:#d1d5db';
+  var tx=on?'transform:translateX(20px)':'transform:translateX(0)';
+  var hide=on?'':'display:none';
+  var val=_draft.taxRateOverride||'';
+  return '<div>'
+    +'<label class="text-xs font-medium text-stone-500">Tax</label>'
+    +'<div class="mt-1 flex items-center gap-2">'
+    +'<button type="button" id="taxToggleBtn" onclick="var d=_draft;d.taxEnabled=!(d.taxEnabled!==false);var o=d.taxEnabled!==false;document.getElementById(&quot;taxToggleBtn&quot;).style.background=o?&quot;#6366f1&quot;:&quot;#d1d5db&quot;;document.getElementById(&quot;taxToggleThumb&quot;).style.transform=o?&quot;translateX(20px)&quot;:&quot;translateX(0)&quot;;document.getElementById(&quot;taxRateWrap&quot;).style.display=o?&quot;&quot;:&quot;none&quot;;document.getElementById(&quot;taxToggleLabel&quot;).textContent=o?&quot;Tax on&quot;:&quot;Tax off&quot;;renderTotalsPanel();" style="position:relative;display:inline-flex;height:24px;width:44px;border-radius:9999px;border:2px solid transparent;cursor:pointer;transition:background 0.2s;'+bg+'">'
+    +'<span id="taxToggleThumb" style="pointer-events:none;display:inline-block;height:20px;width:20px;border-radius:9999px;background:white;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform 0.2s;'+tx+'"></span>'
+    +'</button>'
+    +'<span id="taxToggleLabel" class="text-sm text-stone-600 dark:text-stone-400">'+(on?'Tax on':'Tax off')+'</span>'
+    +'</div>'
+    +'<div id="taxRateWrap" style="margin-top:8px;display:flex;align-items:center;gap:8px;'+hide+'">'
+    +'<input id="taxRateOverride" type="number" min="0" max="100" step="0.5" placeholder="Use product rates" value="'+val+'" oninput="_draft.taxRateOverride=this.value===&quot;&quot;?&quot;&quot;:(+this.value);renderTotalsPanel();" class="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />'
+    +'<span class="text-sm text-stone-500" style="white-space:nowrap">%</span>'
+    +'</div>'
+    +(on?'<p class="text-xs text-stone-400 mt-1">Leave blank to use per-product rates</p>':'')
+    +'</div>';
+}
 function deleteSale(id){
   if(!isFounder()) return toast('Only founders can delete sales','err');
-  const inv=state.invoices.find(x=>x.id===id); if(!inv) return;
-  if(!confirm(`Delete ${inv.number}? This cannot be undone.`)) return;
-  // Restore stock
-  inv.lines.forEach(l=>{ const p=findProd(l.pid); if(p) p.stock+=l.qty; });
-  state.invoices=state.invoices.filter(x=>x.id!==id);
+  var inv=state.invoices.find(function(x){return x.id===id;}); if(!inv) return;
+  if(!confirm('Delete '+inv.number+'? This cannot be undone.')) return;
+  inv.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock+=l.qty;});
+  state.invoices=state.invoices.filter(function(x){return x.id!==id;});
   state.audit.push({ts:Date.now(),action:'invoice.delete',ref:inv.number,by:currentUser()||'Founder'});
-  save(); closeModal(); toast(`${inv.number} deleted`);
+  save(); closeModal(); toast(inv.number+' deleted');
   go('#/sales');
 }
 function editSale(id){
   if(!isFounder()) return toast('Only founders can edit sales','err');
-  const inv=state.invoices.find(x=>x.id===id); if(!inv) return;
-  _draft={...inv, _editingId:id};
+  var inv=state.invoices.find(function(x){return x.id===id;}); if(!inv) return;
+  _draft=Object.assign({},inv,{_editingId:id});
   closeModal();
   go('#/sales/new');
 }
@@ -1002,8 +1021,8 @@ function viewNewInvoice(){
             <div>
               <label class="text-xs font-medium text-stone-500">Customer Type</label>
               <select onchange="_draft.customerType=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
-                <option value="Walk-in" ${(_draft.customerType||'Walk-in')==='Walk-in'?'selected':''}>🚶 Walk-in</option>
-                <option value="Online" ${_draft.customerType==='Online'?'selected':''}>🌐 Online</option>
+                <option value="Walk-in" ${(_draft.customerType||'Walk-in')==='Walk-in'?'selected':''}>&#x1F6B6; Walk-in</option>
+                <option value="Online" ${_draft.customerType==='Online'?'selected':''}>&#x1F310; Online</option>
               </select>
             </div>
             ${isFounder()?renderTaxControls():''}
@@ -1066,35 +1085,12 @@ function viewNewInvoice(){
     </div>
   </div>`;
 }
-function renderTaxControls(){
-  const on = _draft.taxEnabled !== false;
-  const toggleBg = on ? 'background:#6366f1' : 'background:#d1d5db';
-  const thumbPos = on ? 'transform:translateX(20px)' : 'transform:translateX(0)';
-  const rateDisplay = on ? '' : 'display:none';
-  const rateVal = _draft.taxRateOverride || '';
-  return '<div>'
-    + '<label class="text-xs font-medium text-stone-500">Tax</label>'
-    + '<div class="mt-1 flex items-center gap-2">'
-    + '<button type="button" onclick="_draft.taxEnabled=!(_draft.taxEnabled!==false);document.getElementById(\'taxToggleThumb\').style.transform=_draft.taxEnabled!==false?\'translateX(20px)\':\'translateX(0)\';document.getElementById(\'taxToggleBtn\').style.background=_draft.taxEnabled!==false?\'#6366f1\':\'#d1d5db\';document.getElementById(\'taxRateWrap\').style.display=_draft.taxEnabled!==false?\'\':\' none\';document.getElementById(\'taxToggleLabel\').textContent=_draft.taxEnabled!==false?\'Tax on\':\'Tax off\';renderTotalsPanel();" id="taxToggleBtn" style="position:relative;display:inline-flex;height:24px;width:44px;border-radius:9999px;border:2px solid transparent;cursor:pointer;transition:background 0.2s;' + toggleBg + '">'
-    + '<span id="taxToggleThumb" style="pointer-events:none;display:inline-block;height:20px;width:20px;border-radius:9999px;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 0.2s;' + thumbPos + '"></span>'
-    + '</button>'
-    + '<span id="taxToggleLabel" class="text-sm text-stone-600 dark:text-stone-400">' + (on ? 'Tax on' : 'Tax off') + '</span>'
-    + '</div>'
-    + '<div id="taxRateWrap" style="margin-top:8px;display:flex;align-items:center;gap:8px;' + rateDisplay + '">'
-    + '<input id="taxRateOverride" type="number" min="0" max="100" step="0.5" placeholder="Use product rates" value="' + rateVal + '" oninput="_draft.taxRateOverride=this.value===\'\'?\'\':(+this.value);renderTotalsPanel();" class="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />'
-    + '<span class="text-sm text-stone-500" style="white-space:nowrap">%</span>'
-    + '</div>'
-    + '<p class="text-xs text-stone-400 mt-1">' + (on ? 'Leave blank to use per-product rates' : '') + '</p>'
-    + '</div>';
-}
 function totalsCalc(){
   if(!_draft) return {sub:0,tax:0,disc:0,total:0};
   const sub=_draft.lines.reduce((s,l)=>s+l.qty*l.price,0);
-  let tax=0;
-  if(_draft.taxEnabled!==false){
-    const override=(_draft.taxRateOverride!=null && _draft.taxRateOverride!=='') ? Number(_draft.taxRateOverride) : null;
-    tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*(override!=null?override:l.tax)/100,0);
-  }
+  var taxEnabled=_draft.taxEnabled!==false;
+  var taxOv=(_draft.taxRateOverride!=null&&_draft.taxRateOverride!=='')?Number(_draft.taxRateOverride):null;
+  const tax=taxEnabled?_draft.lines.reduce((s,l)=>s+l.qty*l.price*(taxOv!=null?taxOv:l.tax)/100,0):0;
   const disc=Number(_draft.discount||0);
   const total=Math.round(sub+tax-disc);
   return {sub,tax,disc,total};
@@ -1287,21 +1283,20 @@ function saveDraft(mode){
   _draft.subtotal=t.sub; _draft.tax=t.tax; _draft.total=t.total;
   _draft.status = _draft.paid>=_draft.total ? 'paid' : 'unpaid';
   if(!_draft.createdBy) _draft.createdBy=currentUser()||'Founder';
-  const editingId=_draft._editingId||null;
+  var editingId=_draft._editingId||null;
   if(editingId){
-    // Editing: restore old stock first, then apply new
-    const old=state.invoices.find(x=>x.id===editingId);
-    if(old) old.lines.forEach(l=>{ const p=findProd(l.pid); if(p) p.stock+=l.qty; });
-    _draft.lines.forEach(l=>{ const p=findProd(l.pid); if(p) p.stock=Math.max(0,p.stock-l.qty); });
+    var old=state.invoices.find(function(x){return x.id===editingId;});
+    if(old) old.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock+=l.qty;});
+    _draft.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock=Math.max(0,p.stock-l.qty);});
     delete _draft._editingId;
-    const idx=state.invoices.findIndex(x=>x.id===editingId);
-    if(idx>=0) state.invoices[idx]={..._draft}; else state.invoices.push({..._draft});
+    var idx=state.invoices.findIndex(function(x){return x.id===editingId;});
+    if(idx>=0) state.invoices[idx]=Object.assign({},_draft); else state.invoices.push(Object.assign({},_draft));
     state.audit.push({ts:Date.now(),action:'invoice.edit',ref:_draft.number,by:currentUser()||'Founder'});
   } else {
-  // adjust stock
-  _draft.lines.forEach(l=>{ const p=findProd(l.pid); if(p) p.stock = Math.max(0, p.stock - l.qty); });
-  state.invoices.push({..._draft});
-  state.audit.push({ts:Date.now(),action:'invoice.create',ref:_draft.number,by:_draft.createdBy});
+    // adjust stock
+    _draft.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock=Math.max(0,p.stock-l.qty);});
+    state.invoices.push(Object.assign({},_draft));
+    state.audit.push({ts:Date.now(),action:'invoice.create',ref:_draft.number,by:_draft.createdBy});
   }
   save(); const id=_draft.id; _draft=null; toast('Bill saved ✓');
   // Navigate to bills list, then open the bill modal with full action buttons
@@ -1323,7 +1318,7 @@ function openInvoiceView(id){
       <div>
         <div class="text-xs text-stone-500 uppercase tracking-wider">${i.status==='paid'?'Receipt':'Invoice'}</div>
         <div class="text-xl font-bold num">${i.number}</div>
-        <div class="text-xs text-stone-500 flex items-center gap-2 mt-0.5"><span>${dateNice(i.date)} · ${c?.name||'—'}</span>${c?custTypeBadge(c.type):''}<span class="px-1.5 py-0.5 rounded text-xs ${(i.customerType||'Walk-in')==='Online'?'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300':'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}">${(i.customerType||'Walk-in')==='Online'?'🌐 Online':'🚶 Walk-in'}</span></div>
+        <div class="text-xs text-stone-500 flex items-center gap-2 mt-0.5"><span>${dateNice(i.date)} · ${c?.name||'—'}</span>${c?custTypeBadge(c.type):''}<span class="px-1.5 py-0.5 rounded text-xs ${(i.customerType||'Walk-in')==='Online'?'bg-blue-50 text-blue-600':'bg-stone-100 text-stone-500'}">${(i.customerType||'Walk-in')==='Online'?'&#127760; Online':'&#x1F6B6; Walk-in'}</span></div>
       </div>
       <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
@@ -1338,7 +1333,7 @@ function openInvoiceView(id){
     <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
       <div class="space-y-1">
         <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(i.subtotal)}</span></div>
-        <div class="flex justify-between"><span class="text-stone-500">Tax${i.taxEnabled===false?' (none)':i.taxRateOverride?' ('+i.taxRateOverride+'%)':'' }</span><span class="num">${fmt(i.tax)}</span></div>
+        <div class="flex justify-between"><span class="text-stone-500">Tax${i.taxEnabled===false?' (none)':i.taxRateOverride?' ('+i.taxRateOverride+'%)':''}</span><span class="num">${fmt(i.tax)}</span></div>
         <div class="flex justify-between font-bold border-t border-stone-200 dark:border-stone-800 pt-1"><span>Total</span><span class="num">${fmt(i.total)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Paid (${i.payment})</span><span class="num">${fmt(i.paid)}</span></div>
         <div class="flex justify-between text-xs"><span class="text-stone-500">Balance</span><span class="num">${fmt(i.total-i.paid)}</span></div>
@@ -1350,11 +1345,8 @@ function openInvoiceView(id){
           <button onclick="downloadInvoiceHTML('${i.id}')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-4 h-4"></i> Download</button>
           <button onclick="copyReceiptText('${i.id}')" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm flex items-center justify-center gap-1.5"><i data-lucide="copy" class="w-4 h-4"></i> Copy</button>
         </div>
-        ${i.status==='unpaid' && isFounder()?`<button onclick="markPaid('${i.id}')" class="w-full px-3 py-2 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm flex items-center justify-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> Mark as paid</button>`:''}
-        ${isFounder()?`<div class="grid grid-cols-2 gap-2 mt-1">
-          <button onclick="editSale('${i.id}')" class="px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-sm flex items-center justify-center gap-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20"><i data-lucide="pencil" class="w-4 h-4"></i> Edit</button>
-          <button onclick="deleteSale('${i.id}')" class="px-3 py-2 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-500 text-sm flex items-center justify-center gap-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/20"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete</button>
-        </div>`:''}
+        ${i.status==='unpaid'&&isFounder()?'<button onclick="markPaid(\''+i.id+'\')" class="w-full px-3 py-2 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm flex items-center justify-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> Mark as paid</button>':''}
+        ${isFounder()?'<div class="grid grid-cols-2 gap-2 mt-1"><button onclick="editSale(\''+i.id+'\')" class="px-3 py-2 rounded-lg border border-blue-200 text-blue-600 text-sm flex items-center justify-center gap-1.5 hover:bg-blue-50"><i data-lucide="pencil" class="w-4 h-4"></i> Edit</button><button onclick="deleteSale(\''+i.id+'\')" class="px-3 py-2 rounded-lg border border-rose-200 text-rose-500 text-sm flex items-center justify-center gap-1.5 hover:bg-rose-50"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete</button></div>':''}
       </div>
     </div>
   </div>`);
@@ -2185,4 +2177,91 @@ function renderCmdK(){
     {l:'Open Reports',i:'bar-chart-3',fn:()=>{ go('#/reports'); closeCmdK(); }},
     {l:'Open Settings',i:'settings',fn:()=>{ go('#/settings'); closeCmdK(); }},
     {l:'Toggle dark mode',i:'moon-star',fn:()=>{ toggleDark(); closeCmdK(); }}
-  ].filter(
+  ].filter(a=>!q || a.l.toLowerCase().includes(q));
+  const prods=q ? state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)).slice(0,4) : [];
+  const custs=q ? state.customers.filter(c=>c.name.toLowerCase().includes(q)).slice(0,4) : [];
+  const invs=q ? state.invoices.filter(i=>i.number.toLowerCase().includes(q)).slice(0,4) : [];
+  const sec=(t,arr,html)=> arr.length?`<div class="px-2 pt-2 pb-1 text-[11px] uppercase tracking-wider text-stone-500">${t}</div>${arr.map(html).join('')}`:'';
+  document.getElementById('cmdKResults').innerHTML =
+    sec('Actions',actions,(a,idx)=>`<button onclick='(${a.fn.toString()})()' class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="${a.i}" class="w-4 h-4 text-stone-500"></i>${a.l}</button>`)+
+    sec('Products',prods,p=>`<button onclick="closeCmdK(); go('#/inventory')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-stone-500"></i>${p.name}<span class="ml-auto text-xs text-stone-500 num">${p.sku}</span></button>`)+
+    sec('Customers',custs,c=>`<button onclick="closeCmdK(); go('#/customers')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-stone-500"></i>${c.name}</button>`)+
+    sec('Invoices',invs,i=>`<button onclick="closeCmdK(); openInvoiceView('${i.id}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4 text-stone-500"></i>${i.number}<span class="ml-auto text-xs text-stone-500 num">${fmt(i.total)}</span></button>`);
+  lucide.createIcons();
+}
+
+/* ---------- Co-Pilot ---------- */
+function appendCopilot(role,html){
+  const c=document.getElementById('copilotChat');
+  const div=document.createElement('div');
+  div.className=role==='me' ? 'flex justify-end' : 'flex';
+  div.innerHTML = role==='me'
+    ? `<div class="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm bg-brand-600 text-white text-sm">${html}</div>`
+    : `<div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-tl-sm bg-stone-100 dark:bg-stone-900 text-sm">${html}</div>`;
+  c.appendChild(div); c.scrollTop=c.scrollHeight; lucide.createIcons();
+}
+function askCopilot(q){
+  appendCopilot('me', q);
+  const a=answerCopilot(q.toLowerCase());
+  setTimeout(()=>appendCopilot('ai',a),300);
+}
+function answerCopilot(q){
+  if(q.includes('hi')||q.includes('hello')||q.includes('what can you')){
+    return `I can answer questions about your business in real time. Try:<br>• <em>"Total sales today"</em><br>• <em>"Best selling item"</em><br>• <em>"Who owes me money?"</em><br>• <em>"Low stock items"</em><br>• <em>"Profit this month"</em>`;
+  }
+  if(q.includes('today') && (q.includes('sale')||q.includes('sales'))){
+    const t=todaySales(); const c=state.invoices.filter(i=>i.date===todayISO()).length;
+    return `Today's sales: <b class="num">${fmt(t)}</b> across <b>${c}</b> invoice${c===1?'':'s'}.`;
+  }
+  if(q.includes('best') || q.includes('top')){
+    const m={}; state.invoices.forEach(i=>i.lines.forEach(l=>{ m[l.pid]=(m[l.pid]||0)+l.qty*l.price; }));
+    const top=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+    if(!top) return 'No sales yet.';
+    return `Best seller is <b>${findProd(top[0])?.name||'—'}</b> with <b class="num">${fmt(top[1])}</b> in revenue.`;
+  }
+  if(q.includes('low stock')||q.includes('out of stock')||q.includes('reorder')){
+    const ls=lowStock();
+    if(!ls.length) return 'All stock levels look healthy ✨';
+    return `<b>${ls.length}</b> products are low on stock:<br>` + ls.slice(0,5).map(p=>`• ${p.name} — only ${p.stock} ${p.unit}`).join('<br>') + (ls.length>5?`<br>…and ${ls.length-5} more`:'');
+  }
+  if(q.includes('owe')||q.includes('receivable')||q.includes('outstanding')){
+    const u=state.invoices.filter(i=>i.status==='unpaid');
+    if(!u.length) return 'No outstanding invoices 🎉';
+    return `<b>${fmt(sumDue())}</b> across <b>${u.length}</b> unpaid invoices:<br>` + u.slice(0,5).map(i=>`• ${findCust(i.customerId)?.name||'—'} — ${fmt(i.total-i.paid)}`).join('<br>');
+  }
+  if(q.includes('profit')||q.includes('margin')){
+    const sales=state.invoices.reduce((s,i)=>s+i.subtotal,0);
+    const cogs=state.invoices.reduce((s,i)=>s+i.lines.reduce((x,l)=>x+l.qty*l.cost,0),0);
+    const opex=state.expenses.reduce((s,e)=>s+e.amount,0);
+    return `Net profit: <b class="num">${fmt(sales-cogs-opex)}</b> (Revenue ${fmt(sales)} − COGS ${fmt(cogs)} − OpEx ${fmt(opex)}).`;
+  }
+  if(q.includes('cash')||q.includes('bank')||q.includes('balance')){
+    return `Estimated cash + bank position: <b class="num">${fmt(cashIn())}</b>.`;
+  }
+  if(q.includes('customer') && (q.includes('how many')||q.includes('count'))){
+    return `You have <b>${state.customers.length}</b> customers.`;
+  }
+  if(q.includes('product') && (q.includes('how many')||q.includes('count'))){
+    return `You stock <b>${state.products.length}</b> products with total inventory value of <b class="num">${fmt(state.products.reduce((s,p)=>s+p.stock*p.cost,0))}</b>.`;
+  }
+  return `I can pull this from your data, but I'm not sure I understood. Try asking about <em>sales today</em>, <em>profit</em>, <em>low stock</em>, <em>who owes me money</em>, or <em>best selling item</em>.`;
+}
+
+/* ---------- Keyboard ---------- */
+window.addEventListener('keydown',(e)=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); openCmdK(); }
+  if(e.key==='Escape'){ closeCmdK(); closeModal(); }
+  if(!e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA' && document.activeElement.tagName!=='SELECT'){
+    if(e.key==='n') go('#/sales/new');
+    if(e.key==='?') toast('Shortcuts: ⌘K search · N new invoice · Esc close','info');
+  }
+});
+
+/* ---------- Boot ---------- */
+router();
+lucide.createIcons();
+tickClock();
+setInterval(tickClock, 1000);
+</script>
+</body>
+</html>
