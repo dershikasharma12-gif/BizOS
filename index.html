@@ -263,7 +263,7 @@ function seed(){
     {id:uid('e_'),date:daysAgo(22),category:'Misc',amount:850,note:'Tea & snacks',method:'Cash'}
   ];
   return {
-    org:{name:'Demo Stationers & Co.',address:'12 Main Street, Pune 411001, India',phone:'+91 98765 43210',email:'hello@demostationers.in',gstin:'27AAACD1234M1Z5',currency:'INR',symbol:'₹',taxLabel:'GST',footer:'Thank you for shopping with us!',brand:'#4f46e5'},
+    org:{name:'Demo Stationers & Co.',address:'12 Main Street, Pune 411001, India',phone:'+91 98765 43210',email:'hello@demostationers.in',gstin:'27AAACD1234M1Z5',currency:'INR',symbol:'₹',taxLabel:'GST',footer:'Thank you for shopping with us!',instagram:'',brand:'#4f46e5'},
     branch:{id:'b_main',name:'Main Branch'},
     products,customers,suppliers,invoices,purchases,expenses,
     payments:[],
@@ -967,7 +967,7 @@ function ensureWalkInCustomer(){
 }
 function newDraft(){
   ensureWalkInCustomer();
-  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxRateOverride:'',lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
+  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
 }
 function viewNewInvoice(){
   if(!_draft) _draft=newDraft();
@@ -1080,7 +1080,8 @@ function totalsCalc(){
   const sub=_draft.lines.reduce((s,l)=>s+l.qty*l.price,0);
   var taxOv=(_draft.taxRateOverride!=null&&_draft.taxRateOverride!=='')?Number(_draft.taxRateOverride):null;
   const tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*(taxOv!=null?taxOv:l.tax)/100,0);
-  const disc=Number(_draft.discount||0);
+  const disc=Math.round(sub*Number(_draft.discountPct||0)/100);
+  _draft.discount=disc;
   const total=Math.round(sub+tax-disc);
   return {sub,tax,disc,total};
 }
@@ -1092,8 +1093,9 @@ function renderTotals(){
       <div class="flex justify-between"><span class="text-stone-500">Subtotal</span><span class="num">${fmt(t.sub)}</span></div>
       <div class="flex justify-between"><span class="text-stone-500">Tax</span><span class="num">${fmt(t.tax)}</span></div>
       <div class="flex justify-between items-center"><span class="text-stone-500">Discount</span>
-        <input value="${_draft?.discount||0}" oninput="_draft.discount=Number(this.value||0); renderTotalsPanel()" type="number" class="num text-right w-24 px-2 py-1 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" />
+        <div class="flex items-center gap-1"><input value="${_draft?.discountPct||0}" oninput="_draft.discountPct=Number(this.value||0);renderTotalsPanel()" type="number" min="0" max="100" class="num text-right w-16 px-2 py-1 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /><span class="text-xs text-stone-400">%</span></div>
       </div>
+      ${t.disc>0?'<div class="flex justify-between text-xs text-emerald-600"><span></span><span class="num">- '+fmt(t.disc)+'</span></div>':''}
       <div class="border-t border-stone-200 dark:border-stone-800 pt-2 flex justify-between text-lg font-bold"><span>Total</span><span class="num text-brand-700 dark:text-brand-300">${fmt(t.total)}</span></div>
       <div class="flex justify-between text-xs ${due>0?'text-amber-600':'text-emerald-600'}"><span>${due>0?'Due':'Settled'}</span><span class="num font-semibold">${fmt(due)}</span></div>
     </div>`;
@@ -1378,13 +1380,13 @@ function buildReceiptHTML(i){
       <div style="min-width:240px;font-size:13px;">
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.subtotal)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Tax</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.tax)}</span></div>
-        ${i.discount?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Discount</span><span style="font-family:'JetBrains Mono',monospace;">- ${fmt(i.discount)}</span></div>`:''}
+        ${i.discount?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Discount${i.discountPct?' ('+i.discountPct+'%)':''}</span><span style="font-family:'JetBrains Mono',monospace;">- ${fmt(i.discount)}</span></div>`:''}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #0a0a0b;margin-top:4px;font-size:16px;font-weight:800;"><span>TOTAL</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#057a55;font-weight:600;"><span>Paid</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.paid)}</span></div>
         ${i.total-i.paid>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#b45309;font-weight:600;"><span>Balance Due</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total-i.paid)}</span></div>`:''}
       </div>
     </div>
-    <div style="margin-top:24px;padding-top:14px;border-top:1px dashed #d6d3d1;text-align:center;font-size:12px;color:#78716c;">${state.org.footer||''}<br><span style="font-size:10px;">Generated by BizOS · ${new Date().toLocaleString('en-IN')}</span></div>
+    <div style="margin-top:24px;padding-top:14px;border-top:1px dashed #d6d3d1;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div style="text-align:center;font-size:12px;color:#78716c;flex:1;">${state.org.footer||''}<br><span style="font-size:10px;">Generated by BizOS · ${new Date().toLocaleString('en-IN')}</span></div>${state.org.instagram?`<div style="text-align:center;flex-shrink:0;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://instagram.com/${encodeURIComponent(state.org.instagram.replace(/^@/,''))}" width="90" height="90" style="display:block;border-radius:6px;" /><div style="font-size:10px;color:#78716c;margin-top:3px;">&#x1F4F7; @${state.org.instagram.replace(/^@/,'')}</div></div>`:''}</div>
   </div>`;
 }
 function printInvoice(id){
@@ -1420,7 +1422,7 @@ function buildReceiptText(i){
     '',
     `Subtotal: ${fmt(i.subtotal)}`,
     `Tax: ${fmt(i.tax)}`,
-    i.discount?`Discount: -${fmt(i.discount)}`:'',
+    i.discount?`Discount${i.discountPct?' ('+i.discountPct+'%)':''}: -${fmt(i.discount)}`:'',
     `*TOTAL: ${fmt(i.total)}*`,
     `Paid (${i.payment}): ${fmt(i.paid)}`,
     due>0?`Balance due: ${fmt(due)}`:'',
@@ -2065,7 +2067,7 @@ function viewSettings(){
       <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-soft">
         <div class="text-sm font-semibold mb-3">Business profile</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          ${[['oname','Business name',o.name],['oaddr','Address',o.address],['ophone','Phone',o.phone],['oemail','Email',o.email],['ogstin','GSTIN / Tax ID',o.gstin],['ofooter','Receipt footer',o.footer]].map(([id,l,v])=>`<div class="${id==='oaddr'||id==='ofooter'?'md:col-span-2':''}"><label class="text-xs font-medium text-stone-500">${l}</label><input id="${id}" value="${v||''}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>`).join('')}
+          ${[['oname','Business name',o.name],['oaddr','Address',o.address],['ophone','Phone',o.phone],['oemail','Email',o.email],['ogstin','GSTIN / Tax ID',o.gstin],['ofooter','Receipt footer',o.footer],['oinsta','Instagram handle (for QR on bill)',o.instagram||'']].map(([id,l,v])=>`<div class="${id==='oaddr'||id==='ofooter'?'md:col-span-2':''}"><label class="text-xs font-medium text-stone-500">${l}</label><input id="${id}" value="${v||''}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>`).join('')}
           <div><label class="text-xs font-medium text-stone-500">Currency symbol</label><input id="osym" value="${o.symbol}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
           <div><label class="text-xs font-medium text-stone-500">Tax label</label><input id="otax" value="${o.taxLabel}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
         </div>
@@ -2132,7 +2134,7 @@ function removeTeam(id){
   state.team=state.team.filter(t=>t.id!==id); save(); router();
 }
 function saveOrg(){
-  state.org.name=document.getElementById('oname').value; state.org.address=document.getElementById('oaddr').value; state.org.phone=document.getElementById('ophone').value; state.org.email=document.getElementById('oemail').value; state.org.gstin=document.getElementById('ogstin').value; state.org.footer=document.getElementById('ofooter').value; state.org.symbol=document.getElementById('osym').value; state.org.taxLabel=document.getElementById('otax').value;
+  state.org.name=document.getElementById('oname').value; state.org.address=document.getElementById('oaddr').value; state.org.phone=document.getElementById('ophone').value; state.org.email=document.getElementById('oemail').value; state.org.gstin=document.getElementById('ogstin').value; state.org.footer=document.getElementById('ofooter').value; state.org.instagram=document.getElementById('oinsta').value; state.org.symbol=document.getElementById('osym').value; state.org.taxLabel=document.getElementById('otax').value;
   save(); toast('Saved');
 }
 function exportData(){
