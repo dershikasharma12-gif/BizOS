@@ -187,18 +187,18 @@ function seed(){
   const today=new Date();
   const daysAgo=n=>{const d=new Date(today);d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)};
   const products=[
-    {id:uid('p_'),sku:'SKU-1001',name:'Premium A4 Paper Ream',category:'Stationery',cost:280,price:340,stock:120,reorder:30,tax:18,unit:'Ream',hsn:'4802',img:'📄'},
-    {id:uid('p_'),sku:'SKU-1002',name:'Ballpoint Pen (Blue, 10-pack)',category:'Stationery',cost:85,price:120,stock:240,reorder:50,tax:12,unit:'Pack',hsn:'9608',img:'🖊️'},
-    {id:uid('p_'),sku:'SKU-1003',name:'Wireless Mouse',category:'Electronics',cost:540,price:799,stock:45,reorder:15,tax:18,unit:'Pcs',hsn:'8471',img:'🖱️'},
-    {id:uid('p_'),sku:'SKU-1004',name:'USB-C Cable 1m',category:'Electronics',cost:140,price:249,stock:8,reorder:25,tax:18,unit:'Pcs',hsn:'8544',img:'🔌'},
-    {id:uid('p_'),sku:'SKU-1005',name:'Notebook A5 (200pg)',category:'Stationery',cost:60,price:99,stock:300,reorder:80,tax:12,unit:'Pcs',hsn:'4820',img:'📓'},
-    {id:uid('p_'),sku:'SKU-1006',name:'Stapler Heavy Duty',category:'Stationery',cost:320,price:499,stock:22,reorder:10,tax:18,unit:'Pcs',hsn:'8305',img:'📎'},
-    {id:uid('p_'),sku:'SKU-1007',name:'Mechanical Keyboard',category:'Electronics',cost:2200,price:3299,stock:14,reorder:5,tax:18,unit:'Pcs',hsn:'8471',img:'⌨️'},
-    {id:uid('p_'),sku:'SKU-1008',name:'Sticky Notes (Pack of 5)',category:'Stationery',cost:90,price:149,stock:180,reorder:40,tax:12,unit:'Pack',hsn:'4820',img:'🗒️'},
-    {id:uid('p_'),sku:'SKU-1009',name:'Office Chair Mesh',category:'Furniture',cost:4200,price:6499,stock:5,reorder:3,tax:18,unit:'Pcs',hsn:'9401',img:'🪑'},
-    {id:uid('p_'),sku:'SKU-1010',name:'Desk Lamp LED',category:'Electronics',cost:680,price:999,stock:18,reorder:8,tax:18,unit:'Pcs',hsn:'9405',img:'💡'},
-    {id:uid('p_'),sku:'SKU-1011',name:'Whiteboard Marker (Set 4)',category:'Stationery',cost:120,price:199,stock:90,reorder:30,tax:12,unit:'Set',hsn:'9608',img:'🖍️'},
-    {id:uid('p_'),sku:'SKU-1012',name:'Power Bank 20000mAh',category:'Electronics',cost:1100,price:1699,stock:25,reorder:10,tax:18,unit:'Pcs',hsn:'8507',img:'🔋'}
+    {id:uid('p_'),sku:'SKU-1001',name:'Premium A4 Paper Ream',category:'Stationery',cost:280,price:340,stock:120,reorder:30,tax:18,unit:'Ream',hsn:'4802',img:'📄',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1002',name:'Ballpoint Pen (Blue, 10-pack)',category:'Stationery',cost:85,price:120,stock:240,reorder:50,tax:12,unit:'Pack',hsn:'9608',img:'🖊️',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1003',name:'Wireless Mouse',category:'Electronics',cost:540,price:799,stock:45,reorder:15,tax:18,unit:'Pcs',hsn:'8471',img:'🖱️',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1004',name:'USB-C Cable 1m',category:'Electronics',cost:140,price:249,stock:8,reorder:25,tax:18,unit:'Pcs',hsn:'8544',img:'🔌',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1005',name:'Notebook A5 (200pg)',category:'Stationery',cost:60,price:99,stock:300,reorder:80,tax:12,unit:'Pcs',hsn:'4820',img:'📓',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1006',name:'Stapler Heavy Duty',category:'Stationery',cost:320,price:499,stock:22,reorder:10,tax:18,unit:'Pcs',hsn:'8305',img:'📎',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1007',name:'Mechanical Keyboard',category:'Electronics',cost:2200,price:3299,stock:14,reorder:5,tax:18,unit:'Pcs',hsn:'8471',img:'⌨️',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1008',name:'Sticky Notes (Pack of 5)',category:'Stationery',cost:90,price:149,stock:180,reorder:40,tax:12,unit:'Pack',hsn:'4820',img:'🗒️',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1009',name:'Office Chair Mesh',category:'Furniture',cost:4200,price:6499,stock:5,reorder:3,tax:18,unit:'Pcs',hsn:'9401',img:'🪑',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1010',name:'Desk Lamp LED',category:'Electronics',cost:680,price:999,stock:18,reorder:8,tax:18,unit:'Pcs',hsn:'9405',img:'💡',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1011',name:'Whiteboard Marker (Set 4)',category:'Stationery',cost:120,price:199,stock:90,reorder:30,tax:12,unit:'Set',hsn:'9608',img:'🖍️',variantType:'none',variants:[]},
+    {id:uid('p_'),sku:'SKU-1012',name:'Power Bank 20000mAh',category:'Electronics',cost:1100,price:1699,stock:25,reorder:10,tax:18,unit:'Pcs',hsn:'8507',img:'🔋',variantType:'none',variants:[]}
   ];
   const customers=[
     {id:uid('c_'),name:'Ramesh Traders',type:'Online',phone:'+91 98200 11111',email:'ramesh@traders.in',gstin:'27AABCR1234M1Z2',address:'Mumbai, MH',balance:0,credit:50000,since:daysAgo(420)},
@@ -303,6 +303,8 @@ function migrate(s){
   })();
   // Default any customer without a type
   (s.customers||[]).forEach(c=>{ if(!c.type) c.type = c.name?.toLowerCase().includes('walk') ? 'Walk-in' : 'Walk-in'; });
+  // Default any product without variant fields (older saved data)
+  (s.products||[]).forEach(p=>{ if(!p.variantType) p.variantType='none'; if(!Array.isArray(p.variants)) p.variants=[]; });
   return s;
 }
 // Reusable customer-type badge HTML
@@ -382,6 +384,27 @@ const fmtN=(n)=>Math.round(n).toLocaleString('en-IN');
 const dateNice=d=>new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 const findCust=id=>state.customers.find(c=>c.id===id);
 const findProd=id=>state.products.find(p=>p.id===id);
+// --- Size/colour variant support -------------------------------------------------
+// A product can optionally track stock per size or colour instead of one number.
+// p.stock always mirrors the sum of variant stocks so any code that just reads
+// p.stock (low-stock alerts, inventory value, dashboards) keeps working untouched.
+function hasVariants(p){ return !!(p && p.variantType && p.variantType!=='none' && Array.isArray(p.variants) && p.variants.length); }
+function syncProductStockTotal(p){ if(hasVariants(p)) p.stock = p.variants.reduce((s,v)=>s+Number(v.stock||0),0); }
+function findVariant(p, name){ return hasVariants(p) ? (p.variants||[]).find(v=>v.name===name) : null; }
+// Single choke point for every stock change (sale, sale edit/delete, purchase
+// receive, purchase edit/delete). Pass the variant name when the line is
+// for a specific size/colour; pass '' or null for plain (non-variant) products.
+function adjustProductStock(pid, variant, delta){
+  const p=findProd(pid); if(!p) return;
+  if(variant && hasVariants(p)){
+    let v=findVariant(p, variant);
+    if(!v){ v={name:variant,stock:0}; p.variants.push(v); }
+    v.stock=Math.max(0, Number(v.stock||0)+delta);
+    syncProductStockTotal(p);
+  } else {
+    p.stock=Math.max(0, Number(p.stock||0)+delta);
+  }
+}
 const findSupp=id=>state.suppliers.find(s=>s.id===id);
 
 function toast(msg, kind='ok'){
@@ -960,7 +983,7 @@ function deleteSale(id){
   if(!isFounder()) return toast('Only founders can delete sales','err');
   var inv=state.invoices.find(function(x){return x.id===id;}); if(!inv) return;
   if(!confirm('Delete '+inv.number+'? This cannot be undone.')) return;
-  inv.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock+=l.qty;});
+  inv.lines.forEach(function(l){ adjustProductStock(l.pid, l.variant, l.qty); });
   state.invoices=state.invoices.filter(function(x){return x.id!==id;});
   state.audit.push({ts:Date.now(),action:'invoice.delete',ref:inv.number,by:currentUser()||'Founder'});
   save(); closeModal(); toast(inv.number+' deleted');
@@ -1121,7 +1144,7 @@ function renderCart(){
   return _draft.lines.map((l,idx)=>`
     <div class="px-3 py-3 flex items-center gap-2">
       <div class="flex-1 min-w-0">
-        <div class="font-medium text-sm truncate">${l.name}</div>
+        <div class="font-medium text-sm truncate">${l.name}${l.variant?` <span class="text-stone-400 font-normal">(${l.variant})</span>`:''}</div>
         <div class="text-xs text-stone-500 num">${fmt(l.price)} ${l.tax?'· '+l.tax+'%':''}</div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
@@ -1155,7 +1178,7 @@ function renderProdGrid_inner(filter){
       <div class="text-2xl">${p.img||'📦'}</div>
       <div class="text-xs font-medium leading-tight line-clamp-2 min-h-[2.2em]">${p.name}</div>
       <div class="num text-sm font-bold text-brand-700 dark:text-brand-300">${fmt(p.price)}</div>
-      <div class="text-[10px] text-stone-500 num">SKU ${p.sku} · ${p.stock} ${p.unit||''}</div>
+      <div class="text-[10px] text-stone-500 num">SKU ${p.sku} · ${hasVariants(p)?p.variants.length+' size'+(p.variants.length===1?'':'s')+'/colours':p.stock+' '+(p.unit||'')}</div>
     </button>`;
   }).join('');
 }
@@ -1166,16 +1189,66 @@ function renderProdGrid(){
 }
 function addLine(pid){
   const p=findProd(pid); if(!p) return;
+  if(hasVariants(p)){ openVariantPicker(pid); return; }
   if(p.stock<=0){ toast('Out of stock','err'); return; }
   if(!_draft) _draft=newDraft();
-  const ex=_draft.lines.find(l=>l.pid===pid);
+  const ex=_draft.lines.find(l=>l.pid===pid && !l.variant);
   if(ex){ ex.qty+=1; toast(`${p.name} × ${ex.qty}`); }
-  else { _draft.lines.push({pid,sku:p.sku,name:p.name,qty:1,price:p.price,cost:p.cost,tax:p.tax,disc:0}); toast(`Added ${p.name}`); }
+  else { _draft.lines.push({pid,sku:p.sku,name:p.name,variant:'',qty:1,price:p.price,cost:p.cost,tax:p.tax,disc:0}); toast(`Added ${p.name}`); }
+  rerenderCart();
+}
+// Product has sizes/colours — ask which one before adding to the cart, so the
+// exact size/colour sold is deducted from its own stock count.
+function openVariantPicker(pid){
+  const p=findProd(pid); if(!p) return;
+  const label = p.variantType==='color' ? 'colour' : 'size';
+  showModal(`<div class="p-5 w-[380px] max-w-full">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <div class="font-semibold text-base">${p.name}</div>
+        <div class="text-xs text-stone-500">Choose a ${label} — remaining stock shown</div>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+      ${p.variants.map(v=>{
+        const out=v.stock<=0;
+        return `<button type="button" ${out?'disabled':''} onclick="addLineVariant('${p.id}',${JSON.stringify(v.name)})" class="${out?'opacity-40 cursor-not-allowed':'hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 active:scale-95'} px-2 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-center transition">
+          <div class="text-sm font-medium">${v.name}</div>
+          <div class="text-[10px] text-stone-500 num">${v.stock} left</div>
+        </button>`;
+      }).join('') || '<div class="col-span-3 text-center text-sm text-stone-500 py-4">No sizes/colours set up for this product yet — edit it in Inventory.</div>'}
+    </div>
+  </div>`);
+  lucide.createIcons();
+}
+function addLineVariant(pid, variant){
+  const p=findProd(pid); if(!p) return;
+  const v=findVariant(p, variant);
+  if(!v || v.stock<=0){ toast('Out of stock','err'); return; }
+  if(!_draft) _draft=newDraft();
+  const label = p.variantType==='color' ? 'colour' : 'size';
+  const ex=_draft.lines.find(l=>l.pid===pid && l.variant===variant);
+  if(ex){
+    if(ex.qty+1>v.stock){ toast(`Only ${v.stock} left in ${variant}`,'err'); return; }
+    ex.qty+=1; toast(`${p.name} (${variant}) × ${ex.qty}`);
+  } else {
+    _draft.lines.push({pid,sku:p.sku,name:p.name,variant,qty:1,price:p.price,cost:p.cost,tax:p.tax,disc:0});
+    toast(`Added ${p.name} (${variant})`);
+  }
+  closeModal();
   rerenderCart();
 }
 function adjQty(idx, delta){
   if(!_draft || !_draft.lines[idx]) return;
-  _draft.lines[idx].qty = Math.max(1, _draft.lines[idx].qty + delta);
+  const l=_draft.lines[idx];
+  const newQty = Math.max(1, l.qty + delta);
+  if(delta>0){
+    const p=findProd(l.pid);
+    const avail = p ? (l.variant && hasVariants(p) ? (findVariant(p,l.variant)?.stock ?? 0) : p.stock) : Infinity;
+    if(newQty>avail){ toast(`Only ${avail} in stock`,'err'); return; }
+  }
+  l.qty = newQty;
   rerenderCart();
 }
 function setQty(idx, val){
@@ -1292,15 +1365,15 @@ function saveDraft(mode){
   var editingId=_draft._editingId||null;
   if(editingId){
     var old=state.invoices.find(function(x){return x.id===editingId;});
-    if(old) old.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock+=l.qty;});
-    _draft.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock=Math.max(0,p.stock-l.qty);});
+    if(old) old.lines.forEach(function(l){ adjustProductStock(l.pid, l.variant, l.qty); });
+    _draft.lines.forEach(function(l){ adjustProductStock(l.pid, l.variant, -l.qty); });
     delete _draft._editingId;
     var idx=state.invoices.findIndex(function(x){return x.id===editingId;});
     if(idx>=0) state.invoices[idx]=Object.assign({},_draft); else state.invoices.push(Object.assign({},_draft));
     state.audit.push({ts:Date.now(),action:'invoice.edit',ref:_draft.number,by:currentUser()||'Founder'});
   } else {
     // adjust stock
-    _draft.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock=Math.max(0,p.stock-l.qty);});
+    _draft.lines.forEach(function(l){ adjustProductStock(l.pid, l.variant, -l.qty); });
     state.invoices.push(Object.assign({},_draft));
     state.audit.push({ts:Date.now(),action:'invoice.create',ref:_draft.number,by:_draft.createdBy});
     // Advance the persistent series counter so this number is never reissued,
@@ -1335,7 +1408,7 @@ function openInvoiceView(id){
       <table class="w-full text-sm">
         <thead class="bg-stone-50 dark:bg-stone-900 text-xs text-stone-500"><tr><th class="text-left px-3 py-2">Item</th><th class="text-right px-3 py-2">Qty</th><th class="text-right px-3 py-2">Price</th><th class="text-right px-3 py-2">Total</th></tr></thead>
         <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
-          ${i.lines.map(l=>`<tr><td class="px-3 py-2">${l.name}<div class="text-xs text-stone-500 num">${l.sku}</div></td><td class="text-right px-3 py-2 num">${l.qty}</td><td class="text-right px-3 py-2 num">${fmt(l.price)}</td><td class="text-right px-3 py-2 num font-medium">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}
+          ${i.lines.map(l=>`<tr><td class="px-3 py-2">${l.name}${l.variant?` · <span class="text-stone-500">${l.variant}</span>`:''}<div class="text-xs text-stone-500 num">${l.sku}</div></td><td class="text-right px-3 py-2 num">${l.qty}</td><td class="text-right px-3 py-2 num">${fmt(l.price)}</td><td class="text-right px-3 py-2 num font-medium">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}
         </tbody>
       </table>
     </div>
@@ -1392,7 +1465,7 @@ function buildReceiptHTML(i){
       <thead><tr style="border-bottom:1px solid #e7e5e4;text-align:left;color:#57534e;font-size:11px;text-transform:uppercase;letter-spacing:.06em;">
         <th style="padding:8px 0;">Item</th><th style="text-align:right;padding:8px 0;">Qty</th><th style="text-align:right;padding:8px 0;">Price</th><th style="text-align:right;padding:8px 0;">Tax</th><th style="text-align:right;padding:8px 0;">Total</th>
       </tr></thead>
-      <tbody>${i.lines.map(l=>`<tr style="border-bottom:1px solid #f5f5f4;"><td style="padding:8px 0;"><div style="font-weight:600;">${l.name}</div><div style="font-size:11px;color:#78716c;font-family:'JetBrains Mono',monospace;">${l.sku}</div></td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.qty}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${fmt(l.price)}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.tax}%</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;font-weight:600;">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}</tbody>
+      <tbody>${i.lines.map(l=>`<tr style="border-bottom:1px solid #f5f5f4;"><td style="padding:8px 0;"><div style="font-weight:600;">${l.name}${l.variant?` <span style="font-weight:500;color:#78716c;">(${l.variant})</span>`:''}</div><div style="font-size:11px;color:#78716c;font-family:'JetBrains Mono',monospace;">${l.sku}</div></td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.qty}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${fmt(l.price)}</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;">${l.tax}%</td><td style="text-align:right;padding:8px 0;font-family:'JetBrains Mono',monospace;font-weight:600;">${fmt(l.qty*l.price*(1+l.tax/100))}</td></tr>`).join('')}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end;margin-top:14px;">
       <div style="min-width:240px;font-size:13px;">
@@ -1421,7 +1494,7 @@ function buildReceiptText(i){
   const c=findCust(i.customerId);
   const lines = i.lines.map(l=>{
     const total = l.qty*l.price*(1+l.tax/100);
-    return `• ${l.name} × ${l.qty} — ${fmt(total)}`;
+    return `• ${l.name}${l.variant?' ('+l.variant+')':''} × ${l.qty} — ${fmt(total)}`;
   }).join('\n');
   const due = i.total - i.paid;
   return [
@@ -1546,6 +1619,12 @@ function viewInventory(){
     </div>
   </div>`;
 }
+// Compact per-size/colour breakdown so you can see at a glance what's sold
+// out and what's remaining, e.g. "S 0 · M 4 · L 9".
+function variantBreakdownHTML(p){
+  if(!hasVariants(p)) return '';
+  return `<div class="text-[10px] text-stone-500 mt-0.5 flex flex-wrap gap-x-1.5 gap-y-0.5">${p.variants.map(v=>`<span class="${v.stock<=0?'text-rose-500 font-semibold':''}">${v.name} ${v.stock}</span>`).join('<span class="text-stone-300">·</span>')}</div>`;
+}
 function renderInvRows(list){
   const teamMode=isTeam();
   if(!list.length) return `<tr><td colspan="${teamMode?5:8}" class="text-center py-10 text-stone-500 text-sm">No products yet</td></tr>`;
@@ -1560,7 +1639,7 @@ function renderInvRows(list){
         <td class="px-4 py-2.5 num text-right font-medium">${fmt(p.price)}</td>
         <td class="px-4 py-2.5 num text-right">
           <span class="${low?'text-rose-600 font-semibold':p.stock===0?'text-rose-600 font-semibold':''}">${p.stock}</span>
-          ${low?`<div class="text-[10px] text-rose-500">${p.stock===0?'out':'low'}</div>`:''}
+          ${hasVariants(p)?variantBreakdownHTML(p):(low?`<div class="text-[10px] text-rose-500">${p.stock===0?'out':'low'}</div>`:'')}
         </td>
       </tr>`;
     }
@@ -1573,7 +1652,7 @@ function renderInvRows(list){
       <td class="px-4 py-2.5 num text-right text-xs ${m<15?'text-rose-600':'text-emerald-600'}">${m}%</td>
       <td class="px-4 py-2.5 num text-right">
         <span class="${low?'text-rose-600 font-semibold':''}">${p.stock}</span>
-        ${low?`<div class="text-[10px] text-rose-500">low</div>`:''}
+        ${hasVariants(p)?variantBreakdownHTML(p):(low?`<div class="text-[10px] text-rose-500">low</div>`:'')}
       </td>
       <td class="px-4 py-2.5 text-right">
         <button onclick="openProductModal('${p.id}')" class="p-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="pencil" class="w-4 h-4"></i></button>
@@ -1588,7 +1667,8 @@ function renderInvBody(){
   document.getElementById('invBody').innerHTML=renderInvRows(list); lucide.createIcons();
 }
 function openProductModal(id){
-  const p = id ? findProd(id) : {id:uid('p_'),sku:'SKU-'+(1000+state.products.length+1),name:'',category:'General',cost:0,price:0,stock:0,reorder:5,tax:18,unit:'Pcs',hsn:'',img:'📦'};
+  const p = id ? findProd(id) : {id:uid('p_'),sku:'SKU-'+(1000+state.products.length+1),name:'',category:'General',cost:0,price:0,stock:0,reorder:5,tax:18,unit:'Pcs',hsn:'',img:'📦',variantType:'none',variants:[]};
+  _pvariants = (p.variants||[]).map(v=>({name:v.name,stock:v.stock}));
   showModal(`<div class="p-5 w-[480px] max-w-full">
     <div class="flex items-center justify-between mb-4">
       <div class="font-semibold text-lg">${id?'Edit':'Add'} product</div>
@@ -1600,16 +1680,72 @@ function openProductModal(id){
       <div><label class="text-xs font-medium text-stone-500">Category</label><input id="pcat" value="${p.category}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
       <div><label class="text-xs font-medium text-stone-500">Cost</label><input id="pcost" type="number" value="${p.cost}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div><label class="text-xs font-medium text-stone-500">Selling price</label><input id="pprice" type="number" value="${p.price}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
-      <div><label class="text-xs font-medium text-stone-500">Stock</label><input id="pstock" type="number" value="${p.stock}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+      <div class="col-span-2"><label class="text-xs font-medium text-stone-500">Sizes / colours</label>
+        <select id="pvarianttype" onchange="toggleVariantUI()" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
+          <option value="none" ${(!p.variantType||p.variantType==='none')?'selected':''}>No — single stock count</option>
+          <option value="size" ${p.variantType==='size'?'selected':''}>Track by size (S, M, L…)</option>
+          <option value="color" ${p.variantType==='color'?'selected':''}>Track by colour</option>
+        </select>
+      </div>
+      <div id="pstockWrap"><label class="text-xs font-medium text-stone-500">Stock</label><input id="pstock" type="number" value="${p.stock}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div><label class="text-xs font-medium text-stone-500">Reorder at</label><input id="preorder" type="number" value="${p.reorder}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="ptax" type="number" value="${p.tax}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div><label class="text-xs font-medium text-stone-500">Unit</label><input id="punit" value="${p.unit}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div id="pvariantsWrap" class="col-span-2 hidden">
+        <label class="text-xs font-medium text-stone-500">Each <span id="variantTypeLabel">size</span> and its stock</label>
+        <div id="variantRowsBody" class="mt-1"></div>
+        <button type="button" onclick="addVariantRow()" class="mt-1 text-xs font-medium text-brand-600 hover:underline flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Add <span id="variantAddLabel">size</span></button>
+      </div>
       <div class="col-span-2 flex justify-end gap-2 mt-2">
         <button type="button" onclick="closeModal()" class="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 text-sm">Cancel</button>
         <button type="submit" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Save product</button>
       </div>
     </form>
   </div>`);
+  toggleVariantUI();
+}
+let _pvariants=[];
+// Read whatever's currently typed in the size/colour rows into _pvariants
+// before we re-render them (add/remove row) or save, so nothing typed is lost.
+function syncVariantsFromDOM(){
+  const rows=document.querySelectorAll('#variantRowsBody [data-vrow]');
+  _pvariants = Array.from(rows).map(r=>({
+    name:(r.querySelector('[data-vname]')?.value||'').trim(),
+    stock:Number(r.querySelector('[data-vstock]')?.value||0)
+  }));
+}
+function renderVariantRowsBody(){
+  const body=document.getElementById('variantRowsBody'); if(!body) return;
+  const type=document.getElementById('pvarianttype')?.value;
+  const ph = type==='color' ? 'e.g. Red' : 'e.g. M';
+  body.innerHTML = (_pvariants.length ? _pvariants.map((v,idx)=>`
+    <div class="flex items-center gap-2 mb-1.5" data-vrow>
+      <input data-vname value="${v.name||''}" placeholder="${ph}" class="flex-1 px-2 py-1.5 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" />
+      <input data-vstock type="number" value="${v.stock||0}" placeholder="Stock" class="w-20 px-2 py-1.5 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" />
+      <button type="button" onclick="removeVariantRow(${idx})" class="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+    </div>`).join('') : '<div class="text-xs text-stone-400 mb-1.5">No sizes/colours yet — add one below.</div>');
+  lucide.createIcons();
+}
+function addVariantRow(){ syncVariantsFromDOM(); _pvariants.push({name:'',stock:0}); renderVariantRowsBody(); }
+function removeVariantRow(idx){ syncVariantsFromDOM(); _pvariants.splice(idx,1); renderVariantRowsBody(); }
+// Show either the plain Stock field or the size/colour rows, depending on
+// the selected variant type, and keep labels ('size' vs 'colour') in sync.
+function toggleVariantUI(){
+  const type=document.getElementById('pvarianttype')?.value || 'none';
+  const stockWrap=document.getElementById('pstockWrap');
+  const varWrap=document.getElementById('pvariantsWrap');
+  if(!stockWrap||!varWrap) return;
+  const label = type==='color' ? 'colour' : 'size';
+  const typeLabelEl=document.getElementById('variantTypeLabel'); if(typeLabelEl) typeLabelEl.textContent=label;
+  const addLabelEl=document.getElementById('variantAddLabel'); if(addLabelEl) addLabelEl.textContent=label;
+  if(type==='none'){
+    stockWrap.classList.remove('hidden');
+    varWrap.classList.add('hidden');
+  } else {
+    stockWrap.classList.add('hidden');
+    varWrap.classList.remove('hidden');
+    renderVariantRowsBody();
+  }
 }
 function saveProduct(id, isEdit){
   const p = isEdit ? findProd(id) : {id};
@@ -1618,10 +1754,21 @@ function saveProduct(id, isEdit){
   p.category=document.getElementById('pcat').value;
   p.cost=Number(document.getElementById('pcost').value||0);
   p.price=Number(document.getElementById('pprice').value||0);
-  p.stock=Number(document.getElementById('pstock').value||0);
   p.reorder=Number(document.getElementById('preorder').value||0);
   p.tax=Number(document.getElementById('ptax').value||0);
   p.unit=document.getElementById('punit').value;
+  const variantType=document.getElementById('pvarianttype').value;
+  if(variantType!=='none'){
+    syncVariantsFromDOM();
+    p.variantType=variantType;
+    p.variants=_pvariants.filter(v=>v.name).map(v=>({name:v.name,stock:Math.max(0,Number(v.stock||0))}));
+    syncProductStockTotal(p);
+    if(!p.variants.length){ p.variantType='none'; p.stock=Number(document.getElementById('pstock').value||0); }
+  } else {
+    p.variantType='none';
+    p.variants=[];
+    p.stock=Number(document.getElementById('pstock').value||0);
+  }
   if(!isEdit){ p.img='📦'; p.hsn=''; state.products.push(p); }
   save(); closeModal(); toast(isEdit?'Product updated':'Product added'); router();
 }
@@ -1865,10 +2012,11 @@ function openPurchaseModal(id){
         <div><label class="text-xs font-medium text-stone-500">Supplier</label><select id="pbsupp" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.suppliers.map(s=>`<option value="${s.id}" ${s.id===defSupp?'selected':''}>${s.name}</option>`).join('')}</select></div>
       </div>
       <div class="grid grid-cols-3 gap-2">
-        <div><label class="text-xs font-medium text-stone-500">Product</label><select id="pbprod" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.products.map(p=>`<option value="${p.id}" ${p.id===defProd?'selected':''}>${p.name}</option>`).join('')}</select></div>
+        <div><label class="text-xs font-medium text-stone-500">Product</label><select id="pbprod" onchange="onPurchaseProductChange()" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.products.map(p=>`<option value="${p.id}" ${p.id===defProd?'selected':''}>${p.name}</option>`).join('')}</select></div>
         <div><label class="text-xs font-medium text-stone-500">Qty</label><input id="pbqty" type="number" value="${defQty}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
         <div><label class="text-xs font-medium text-stone-500">Unit cost</label><input id="pbcost" type="number" value="${defCost}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       </div>
+      <div id="pbvariantWrap" class="hidden"><label class="text-xs font-medium text-stone-500">Which size/colour is this restocking?</label><select id="pbvariant" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none"></select></div>
       <div class="grid grid-cols-2 gap-2">
         <div><label class="text-xs font-medium text-stone-500">Tax %</label><input id="pbtax" type="number" value="${defTax}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
         <div><label class="text-xs font-medium text-stone-500">${isEdit?'Paid':'Paid now'}</label><input id="pbpaid" type="number" value="${defPaid}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
@@ -1880,6 +2028,24 @@ function openPurchaseModal(id){
       </div>
     </form>
   </div>`);
+  lucide.createIcons();
+  onPurchaseProductChange(isEdit?existing.lines?.[0]?.variant:'');
+}
+// Show/hide + populate the size/colour dropdown based on the selected product.
+// preselect (optional) is used when editing an existing purchase bill.
+function onPurchaseProductChange(preselect){
+  const pid=document.getElementById('pbprod')?.value;
+  const p=findProd(pid);
+  const wrap=document.getElementById('pbvariantWrap');
+  const sel=document.getElementById('pbvariant');
+  if(!wrap||!sel) return;
+  if(p && hasVariants(p)){
+    wrap.classList.remove('hidden');
+    sel.innerHTML = p.variants.map(v=>`<option value="${v.name}" ${v.name===preselect?'selected':''}>${v.name} (${v.stock} in stock)</option>`).join('');
+  } else {
+    wrap.classList.add('hidden');
+    sel.innerHTML='';
+  }
 }
 function savePurchase(id){
   const pid=document.getElementById('pbprod').value;
@@ -1888,29 +2054,30 @@ function savePurchase(id){
   const cost=Number(document.getElementById('pbcost').value||0);
   const tax=Number(document.getElementById('pbtax').value||0);
   const paid=Number(document.getElementById('pbpaid').value||0);
+  const variantWrap=document.getElementById('pbvariantWrap');
+  const variant = (variantWrap && !variantWrap.classList.contains('hidden')) ? document.getElementById('pbvariant').value : '';
   const sub=qty*cost; const taxA=sub*tax/100; const total=Math.round(sub+taxA);
   if(id){
     const existing=state.purchases.find(x=>x.id===id);
     if(!existing){ toast('Bill not found','err'); return; }
     // reverse old stock effect
     const oldLine=existing.lines?.[0];
-    if(oldLine){
-      const oldProd=findProd(oldLine.pid);
-      if(oldProd) oldProd.stock-=oldLine.qty;
-    }
+    if(oldLine){ adjustProductStock(oldLine.pid, oldLine.variant, -oldLine.qty); }
     existing.number=document.getElementById('pbnum').value;
     existing.date=document.getElementById('pbdate').value;
     existing.supplierId=document.getElementById('pbsupp').value;
-    existing.lines=[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}];
+    existing.lines=[{pid,sku:p.sku,name:p.name,variant,qty,price:cost,tax}];
     existing.subtotal=sub; existing.tax=taxA; existing.total=total;
     existing.paid=paid; existing.status=paid>=total?'paid':'unpaid';
-    if(p){ p.stock+=qty; p.cost=cost||p.cost; }
+    adjustProductStock(pid, variant, qty);
+    if(p){ p.cost=cost||p.cost; }
     save(); closeModal(); toast('Purchase updated'); router();
     return;
   }
-  const b={id:uid('po_'),number:document.getElementById('pbnum').value,date:document.getElementById('pbdate').value,supplierId:document.getElementById('pbsupp').value,lines:[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}],subtotal:sub,tax:taxA,total,paid,status:paid>=total?'paid':'unpaid'};
+  const b={id:uid('po_'),number:document.getElementById('pbnum').value,date:document.getElementById('pbdate').value,supplierId:document.getElementById('pbsupp').value,lines:[{pid,sku:p.sku,name:p.name,variant,qty,price:cost,tax}],subtotal:sub,tax:taxA,total,paid,status:paid>=total?'paid':'unpaid'};
   state.purchases.push(b);
-  if(p){ p.stock+=qty; p.cost=cost||p.cost; }
+  adjustProductStock(pid, variant, qty);
+  if(p){ p.cost=cost||p.cost; }
   // Advance the persistent series counter so this number is never reissued,
   // even if this bill is later deleted.
   state.counters.purchaseSeq++;
@@ -1919,7 +2086,7 @@ function savePurchase(id){
 function deletePurchase(id){
   const b=state.purchases.find(x=>x.id===id); if(!b){ toast('Bill not found','err'); return; }
   if(!confirm(`Delete ${b.number}? This will reverse the stock added by this bill.`)) return;
-  (b.lines||[]).forEach(l=>{ const p=findProd(l.pid); if(p) p.stock-=l.qty; });
+  (b.lines||[]).forEach(l=>{ adjustProductStock(l.pid, l.variant, -l.qty); });
   state.purchases=state.purchases.filter(x=>x.id!==id);
   save(); toast('Purchase deleted'); router();
 }
