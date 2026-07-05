@@ -270,7 +270,12 @@ function seed(){
     audit:[],
     auth:{founderPasswordHash:'',needsSetup:true,session:null},
     team:[],
-    settings:{darkMode:false,template:'modern'}
+    settings:{darkMode:false,template:'modern'},
+    // Persistent, ever-increasing series counters for Bill #s.
+    // These NEVER reset and are never derived from array length, so a deleted
+    // bill leaves a visible gap in the sequence instead of its number being
+    // silently reused by the next bill.
+    counters:{invoiceSeq:invNum, purchaseSeq:2004}
   };
 }
 
@@ -286,6 +291,16 @@ function migrate(s){
   if(!s.settings) s.settings={darkMode:false,template:'modern'};
   if(!s.audit) s.audit=[];
   if(!s.payments) s.payments=[];
+  if(!s.counters) s.counters={invoiceSeq:1001,purchaseSeq:2001};
+  // Derive a safe starting point from any existing numbers so we never
+  // hand out a series number that's already in use.
+  (function(){
+    const seqOf=(num,prefix)=>{ const m=String(num||'').match(new RegExp('^'+prefix+'-?(\\d+)$')); return m?parseInt(m[1],10):0; };
+    const maxInv=(s.invoices||[]).reduce((m,i)=>Math.max(m,seqOf(i.number,'INV')),0);
+    const maxPur=(s.purchases||[]).reduce((m,p)=>Math.max(m,seqOf(p.number,'BILL')),0);
+    if(s.counters.invoiceSeq<=maxInv) s.counters.invoiceSeq=maxInv+1;
+    if(s.counters.purchaseSeq<=maxPur) s.counters.purchaseSeq=maxPur+1;
+  })();
   // Default any customer without a type
   (s.customers||[]).forEach(c=>{ if(!c.type) c.type = c.name?.toLowerCase().includes('walk') ? 'Walk-in' : 'Walk-in'; });
   return s;
@@ -967,7 +982,7 @@ function ensureWalkInCustomer(){
 }
 function newDraft(){
   ensureWalkInCustomer();
-  return {id:uid('inv_'),number:'INV-'+(1000+state.invoices.length+1),date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
+  return {id:uid('inv_'),number:'INV-'+state.counters.invoiceSeq,date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
 }
 function viewNewInvoice(){
   if(!_draft) _draft=newDraft();
@@ -1288,6 +1303,9 @@ function saveDraft(mode){
     _draft.lines.forEach(function(l){var p=findProd(l.pid);if(p)p.stock=Math.max(0,p.stock-l.qty);});
     state.invoices.push(Object.assign({},_draft));
     state.audit.push({ts:Date.now(),action:'invoice.create',ref:_draft.number,by:_draft.createdBy});
+    // Advance the persistent series counter so this number is never reissued,
+    // even if this bill is later deleted.
+    state.counters.invoiceSeq++;
   }
   save(); const id=_draft.id; _draft=null; toast('Bill saved ✓');
   // Navigate to bills list, then open the bill modal with full action buttons
@@ -1830,7 +1848,7 @@ function openPurchaseModal(id){
   const isEdit=!!id;
   const existing=isEdit?state.purchases.find(p=>p.id===id):null;
   const line=existing?.lines?.[0]||{};
-  const defNum=isEdit?existing.number:`BILL-${2000+state.purchases.length+1}`;
+  const defNum=isEdit?existing.number:`BILL-${state.counters.purchaseSeq}`;
   const defDate=isEdit?existing.date:todayISO();
   const defSupp=isEdit?existing.supplierId:'';
   const defProd=isEdit?line.pid:'';
@@ -1893,6 +1911,9 @@ function savePurchase(id){
   const b={id:uid('po_'),number:document.getElementById('pbnum').value,date:document.getElementById('pbdate').value,supplierId:document.getElementById('pbsupp').value,lines:[{pid,sku:p.sku,name:p.name,qty,price:cost,tax}],subtotal:sub,tax:taxA,total,paid,status:paid>=total?'paid':'unpaid'};
   state.purchases.push(b);
   if(p){ p.stock+=qty; p.cost=cost||p.cost; }
+  // Advance the persistent series counter so this number is never reissued,
+  // even if this bill is later deleted.
+  state.counters.purchaseSeq++;
   save(); closeModal(); toast('Purchase saved'); router();
 }
 function deletePurchase(id){
