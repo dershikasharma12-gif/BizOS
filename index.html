@@ -1033,8 +1033,8 @@ function viewNewInvoice(){
         <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-soft">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="text-xs font-medium text-stone-500">Bill #</label>
-              <input value="${_draft.number}" oninput="_draft.number=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
+              <label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> Bill #</label>
+              <input value="${_draft.number}" readonly title="Auto-assigned in series — can't be edited, so a missing bill is always noticeable" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900/60 text-stone-500 outline-none cursor-not-allowed num" />
             </div>
             <div>
               <label class="text-xs font-medium text-stone-500">Date</label>
@@ -2007,7 +2007,7 @@ function openPurchaseModal(id){
     <div class="flex items-center justify-between mb-4"><div class="font-semibold text-lg">${isEdit?'Edit':'New'} purchase bill</div><button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900"><i data-lucide="x" class="w-4 h-4"></i></button></div>
     <form onsubmit="event.preventDefault(); savePurchase('${id||''}')" class="space-y-3 text-sm">
       <div class="grid grid-cols-3 gap-2">
-        <div><label class="text-xs font-medium text-stone-500">Bill #</label><input id="pbnum" value="${defNum}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
+        <div><label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> Bill #</label><input id="pbnum" value="${defNum}" readonly title="Auto-assigned in series — can't be edited, so a missing bill is always noticeable" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900/60 text-stone-500 outline-none cursor-not-allowed num" /></div>
         <div><label class="text-xs font-medium text-stone-500">Date</label><input id="pbdate" type="date" value="${defDate}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
         <div><label class="text-xs font-medium text-stone-500">Supplier</label><select id="pbsupp" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">${state.suppliers.map(s=>`<option value="${s.id}" ${s.id===defSupp?'selected':''}>${s.name}</option>`).join('')}</select></div>
       </div>
