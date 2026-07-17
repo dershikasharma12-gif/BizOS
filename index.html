@@ -391,6 +391,14 @@ const findProd=id=>state.products.find(p=>p.id===id);
 function hasVariants(p){ return !!(p && p.variantType && p.variantType!=='none' && Array.isArray(p.variants) && p.variants.length); }
 function syncProductStockTotal(p){ if(hasVariants(p)) p.stock = p.variants.reduce((s,v)=>s+Number(v.stock||0),0); }
 function findVariant(p, name){ return hasVariants(p) ? (p.variants||[]).find(v=>v.name===name) : null; }
+// Safely embed a JS string literal (single-quoted) inside an onclick="..." HTML
+// attribute that's itself double-quoted. Escapes backslashes/quotes for JS,
+// then escapes " and < so the HTML attribute parser can't be broken out of
+// early (this is what caused "Unexpected end of input" when a size/colour
+// name — or anything containing a quote — was clicked).
+function jsAttr(s){
+  return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
 // Single choke point for every stock change (sale, sale edit/delete, purchase
 // receive, purchase edit/delete). Pass the variant name when the line is
 // for a specific size/colour; pass '' or null for plain (non-variant) products.
@@ -1213,7 +1221,7 @@ function openVariantPicker(pid){
     <div class="grid grid-cols-3 gap-2">
       ${p.variants.map(v=>{
         const out=v.stock<=0;
-        return `<button type="button" ${out?'disabled':''} onclick="addLineVariant('${p.id}',${JSON.stringify(v.name)})" class="${out?'opacity-40 cursor-not-allowed':'hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 active:scale-95'} px-2 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-center transition">
+        return `<button type="button" ${out?'disabled':''} onclick="addLineVariant('${jsAttr(p.id)}','${jsAttr(v.name)}')" class="${out?'opacity-40 cursor-not-allowed':'hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 active:scale-95'} px-2 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-center transition">
           <div class="text-sm font-medium">${v.name}</div>
           <div class="text-[10px] text-stone-500 num">${v.stock} left</div>
         </button>`;
