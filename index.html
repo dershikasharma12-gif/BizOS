@@ -1001,6 +1001,8 @@ function editSale(id){
   if(!isFounder()) return toast('Only founders can edit sales','err');
   var inv=state.invoices.find(function(x){return x.id===id;}); if(!inv) return;
   _draft=Object.assign({},inv,{_editingId:id});
+  // Prefill the customer-name box so re-saving keeps the same customer
+  if(_draft.customerName===undefined){ const c=findCust(_draft.customerId); _draft.customerName = c&&c.name!=='Walk-in Customer' ? c.name : ''; }
   closeModal();
   go('#/sales/new');
 }
@@ -1013,7 +1015,7 @@ function ensureWalkInCustomer(){
 }
 function newDraft(){
   ensureWalkInCustomer();
-  return {id:uid('inv_'),number:'INV-'+state.counters.invoiceSeq,date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
+  return {id:uid('inv_'),number:'INV-'+state.counters.invoiceSeq,date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerName:'',customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
 }
 function viewNewInvoice(){
   if(!_draft) _draft=newDraft();
@@ -1049,10 +1051,9 @@ function viewNewInvoice(){
               <input type="date" value="${_draft.date}" oninput="_draft.date=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" />
             </div>
             <div>
-              <label class="text-xs font-medium text-stone-500">Customer</label>
-              <select onchange="_draft.customerId=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
-                ${state.customers.map(c=>`<option value="${c.id}" ${c.id===_draft.customerId?'selected':''}>${c.name} · ${c.type||'Walk-in'}</option>`).join('')}
-              </select>
+              <label class="text-xs font-medium text-stone-500">Customer name</label>
+              <input list="custNameList" placeholder="Leave blank for walk-in customer" value="${_draft.customerName ?? (findCust(_draft.customerId)&&findCust(_draft.customerId).name!=='Walk-in Customer'?findCust(_draft.customerId).name:'')}" oninput="_draft.customerName=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" autocomplete="off" />
+              <datalist id="custNameList">${state.customers.filter(c=>c.name!=='Walk-in Customer').map(c=>`<option value="${c.name}">`).join('')}</datalist>
             </div>
             <div>
               <label class="text-xs font-medium text-stone-500">Customer Type</label>
@@ -1366,8 +1367,29 @@ function stopBarcodeScan(){
   _scanStream=null; _scanLoop=null;
 }
 function cancelDraft(){ _draft=null; go(isTeam()?'#/team-pos':'#/sales'); }
+// Match the typed customer name to a saved customer, or create one on the fly.
+// Blank name = generic walk-in customer.
+function resolveDraftCustomer(){
+  ensureWalkInCustomer();
+  const name=(_draft.customerName||'').trim();
+  if(!name){
+    const wc=state.customers.find(c=>c.name==='Walk-in Customer')||state.customers[0];
+    _draft.customerId=wc.id;
+    return;
+  }
+  let c=state.customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  if(!c){
+    c={id:uid('c_'),name,type:_draft.customerType||'Walk-in',phone:(_draft.phoneOverride||''),email:'',gstin:'',address:'',balance:0,credit:0,since:todayISO()};
+    state.customers.push(c);
+    toast(`New customer saved: ${name}`);
+  } else if(_draft.phoneOverride && !c.phone){
+    c.phone=_draft.phoneOverride; // remember their number for next time
+  }
+  _draft.customerId=c.id;
+}
 function saveDraft(mode){
   if(!_draft.lines.length) return toast('Add at least one item','err');
+  resolveDraftCustomer();
   const t=totalsCalc();
   _draft.subtotal=t.sub; _draft.tax=t.tax; _draft.total=t.total;
   _draft.status = _draft.paid>=_draft.total ? 'paid' : 'unpaid';
