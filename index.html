@@ -1597,6 +1597,9 @@ function downloadInvoiceHTML(id){
 }
 
 /* ---------- Inventory ---------- */
+const PRODUCT_CATEGORIES=['Dress','Tee','Accessories'];
+// Fixed list plus anything already used on existing products, so old data keeps working
+function allCategories(){ const set=new Set(PRODUCT_CATEGORIES); state.products.forEach(p=>{ if(p.category) set.add(p.category); }); return [...set]; }
 function viewInventory(){
   const list=[...state.products];
   const teamMode=isTeam();
@@ -1612,6 +1615,10 @@ function viewInventory(){
     <div class="bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-soft overflow-hidden">
       <div class="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center gap-2">
         <input id="invSearch" oninput="renderInvBody()" placeholder="Search by name or SKU…" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:border-brand-400 w-full sm:w-72" />
+        <select id="invCat" onchange="renderInvBody()" class="px-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 outline-none focus:border-brand-400">
+          <option value="">All categories</option>
+          ${allCategories().map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
       </div>
       <div class="overflow-x-auto scroll-thin">
         <table class="w-full text-sm">
@@ -1671,11 +1678,12 @@ function renderInvRows(list){
 }
 function renderInvBody(){
   const q=(document.getElementById('invSearch').value||'').toLowerCase();
-  const list=state.products.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));
+  const cat=(document.getElementById('invCat')||{}).value||'';
+  const list=state.products.filter(p=>(p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q))&&(!cat||p.category===cat));
   document.getElementById('invBody').innerHTML=renderInvRows(list); lucide.createIcons();
 }
 function openProductModal(id){
-  const p = id ? findProd(id) : {id:uid('p_'),sku:'SKU-'+(1000+state.products.length+1),name:'',category:'General',cost:0,price:0,stock:0,reorder:5,tax:18,unit:'Pcs',hsn:'',img:'📦',variantType:'none',variants:[]};
+  const p = id ? findProd(id) : {id:uid('p_'),sku:'SKU-'+(1000+state.products.length+1),name:'',category:PRODUCT_CATEGORIES[0],cost:0,price:0,stock:0,reorder:5,tax:18,unit:'Pcs',hsn:'',img:'📦',variantType:'none',variants:[]};
   _pvariants = (p.variants||[]).map(v=>({name:v.name,stock:v.stock}));
   showModal(`<div class="p-5 w-[480px] max-w-full">
     <div class="flex items-center justify-between mb-4">
@@ -1685,7 +1693,11 @@ function openProductModal(id){
     <form onsubmit="event.preventDefault(); saveProduct('${p.id}', ${id?true:false})" class="grid grid-cols-2 gap-3 text-sm">
       <div class="col-span-2"><label class="text-xs font-medium text-stone-500">Name</label><input id="pname" value="${p.name}" required class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" /></div>
       <div><label class="text-xs font-medium text-stone-500">SKU</label><input id="psku" value="${p.sku}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
-      <div><label class="text-xs font-medium text-stone-500">Category</label><input id="pcat" value="${p.category}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /></div>
+      <div><label class="text-xs font-medium text-stone-500">Category</label>
+        <select id="pcat" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
+          ${allCategories().map(c=>`<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
       <div><label class="text-xs font-medium text-stone-500">Cost</label><input id="pcost" type="number" value="${p.cost}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div><label class="text-xs font-medium text-stone-500">Selling price</label><input id="pprice" type="number" value="${p.price}" class="mt-1 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none num" /></div>
       <div class="col-span-2"><label class="text-xs font-medium text-stone-500">Sizes / colours</label>
