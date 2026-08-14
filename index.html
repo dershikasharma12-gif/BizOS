@@ -1125,15 +1125,28 @@ function viewNewInvoice(){
     </div>
   </div>`;
 }
+// On a saved bill, spell out which items the discount covered (blank if all of them)
+function discScopeLabel(i){
+  const lines=i.lines||[];
+  const on=lines.filter(l=>l.nodisc!==true);
+  if(!on.length || on.length===lines.length) return '';
+  const cats=[...new Set(on.map(lineCat).filter(Boolean))];
+  return cats.length ? ` on ${cats.join(', ')}` : ` on ${on.length} item${on.length===1?'':'s'}`;
+}
+// A line is discountable unless it's been switched off in the cart.
+function lineDiscountable(l){ return l.nodisc!==true; }
 function totalsCalc(){
-  if(!_draft) return {sub:0,tax:0,disc:0,total:0};
+  if(!_draft) return {sub:0,tax:0,disc:0,total:0,discBase:0,discCount:0};
   const sub=_draft.lines.reduce((s,l)=>s+l.qty*l.price,0);
   var taxOv=(_draft.taxRateOverride!=null&&_draft.taxRateOverride!=='')?Number(_draft.taxRateOverride):null;
   const tax=_draft.lines.reduce((s,l)=>s+l.qty*l.price*(taxOv!=null?taxOv:l.tax)/100,0);
-  const disc=Math.round(sub*Number(_draft.discountPct||0)/100);
+  // Discount applies only to the lines marked eligible (e.g. dresses but not accessories)
+  const elig=_draft.lines.filter(lineDiscountable);
+  const discBase=elig.reduce((s,l)=>s+l.qty*l.price,0);
+  const disc=Math.round(discBase*Number(_draft.discountPct||0)/100);
   _draft.discount=disc;
   const total=Math.round(sub+tax-disc);
-  return {sub,tax,disc,total};
+  return {sub,tax,disc,total,discBase,discCount:elig.length};
 }
 function renderTotals(){
   const t=totalsCalc();
@@ -1145,7 +1158,15 @@ function renderTotals(){
       <div class="flex justify-between items-center"><span class="text-stone-500">Discount</span>
         <div class="flex items-center gap-1"><input value="${_draft?.discountPct||0}" oninput="_draft.discountPct=Number(this.value||0);renderTotalsPanel()" type="number" min="0" max="100" class="num text-right w-16 px-2 py-1 text-xs rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none" /><span class="text-xs text-stone-400">%</span></div>
       </div>
-      ${t.disc>0?'<div class="flex justify-between text-xs text-emerald-600"><span></span><span class="num">- '+fmt(t.disc)+'</span></div>':''}
+      ${Number(_draft?.discountPct||0)>0?`<div class="flex justify-between text-xs"><span class="text-stone-400">${t.discCount===_draft.lines.length?'on all items':`on ${t.discCount} of ${_draft.lines.length} items · ${fmt(t.discBase)}`}</span><span class="num text-emerald-600">- ${fmt(t.disc)}</span></div>`:''}
+      ${_draft?.lines.length?`<div class="flex items-center gap-1 text-[11px] text-stone-400">
+        <span>Apply to:</span>
+        <select onchange="setDiscScope(this.value)" class="flex-1 px-1.5 py-1 rounded-md border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none text-[11px] text-stone-600 dark:text-stone-300">
+          <option value="__all">All items</option>
+          ${[...new Set(_draft.lines.map(lineCat).filter(Boolean))].map(c=>`<option value="${c}">${c} only</option>`).join('')}
+          <option value="__none">No items</option>
+        </select>
+      </div>`:''}
       <div class="border-t border-stone-200 dark:border-stone-800 pt-2 flex justify-between text-lg font-bold"><span>Total</span><span class="num text-brand-700 dark:text-brand-300">${fmt(t.total)}</span></div>
       <div class="flex justify-between text-xs ${due>0?'text-amber-600':'text-emerald-600'}"><span>${due>0?'Due':'Settled'}</span><span class="num font-semibold">${fmt(due)}</span></div>
     </div>`;
@@ -1159,7 +1180,10 @@ function renderCart(){
     <div class="px-3 py-3 flex items-center gap-2">
       <div class="flex-1 min-w-0">
         <div class="font-medium text-sm truncate">${l.name}${l.variant?` <span class="text-stone-400 font-normal">(${l.variant})</span>`:''}${lineCat(l)?` <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 font-normal align-middle">${lineCat(l)}</span>`:''}</div>
-        <div class="text-xs text-stone-500 num">${fmt(l.price)} ${l.tax?'· '+l.tax+'%':''}</div>
+        <div class="text-xs text-stone-500 num flex items-center gap-1.5 flex-wrap">
+          <span>${fmt(l.price)} ${l.tax?'· '+l.tax+'%':''}</span>
+          <button type="button" onclick="toggleLineDisc(${idx})" title="${lineDiscountable(l)?'Discount applies to this item — tap to exclude':'No discount on this item — tap to include'}" class="px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${lineDiscountable(l)?'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300':'border-stone-200 bg-stone-100 text-stone-400 dark:border-stone-700 dark:bg-stone-800'}">${lineDiscountable(l)?'% discount ✓':'% no discount'}</button>
+        </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button type="button" onclick="adjQty(${idx},-1)" class="w-7 h-7 rounded-md border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 flex items-center justify-center"><i data-lucide="minus" class="w-3 h-3"></i></button>
@@ -1169,6 +1193,23 @@ function renderCart(){
       <div class="num text-sm font-semibold w-20 text-right shrink-0">${fmt(l.qty*l.price*(1+l.tax/100))}</div>
       <button type="button" onclick="removeLine(${idx})" class="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>`).join('');
+}
+// Bulk switch: discount all items, none, or only one category (e.g. Dress only)
+function setDiscScope(scope){
+  if(!_draft) return;
+  _draft.lines.forEach(l=>{
+    if(scope==='__all') l.nodisc=false;
+    else if(scope==='__none') l.nodisc=true;
+    else l.nodisc = lineCat(l)!==scope;
+  });
+  rerenderCart();
+}
+// Include / exclude a single line from the bill discount
+function toggleLineDisc(idx){
+  if(!_draft || !_draft.lines[idx]) return;
+  const l=_draft.lines[idx];
+  l.nodisc = lineDiscountable(l) ? true : false;
+  rerenderCart();
 }
 function rerenderCart(){
   const body=document.getElementById('cartBody'); if(body) body.innerHTML=renderCart();
@@ -1506,7 +1547,7 @@ function buildReceiptHTML(i){
       <div style="min-width:240px;font-size:13px;">
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.subtotal)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Tax</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.tax)}</span></div>
-        ${i.discount?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Discount${i.discountPct?' ('+i.discountPct+'%)':''}</span><span style="font-family:'JetBrains Mono',monospace;">- ${fmt(i.discount)}</span></div>`:''}
+        ${i.discount?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#57534e;"><span>Discount${i.discountPct?' ('+i.discountPct+'%)':''}${discScopeLabel(i)}</span><span style="font-family:'JetBrains Mono',monospace;">- ${fmt(i.discount)}</span></div>`:''}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #0a0a0b;margin-top:4px;font-size:16px;font-weight:800;"><span>TOTAL</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:4px 0;color:#057a55;font-weight:600;"><span>Paid</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.paid)}</span></div>
         ${i.total-i.paid>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#b45309;font-weight:600;"><span>Balance Due</span><span style="font-family:'JetBrains Mono',monospace;">${fmt(i.total-i.paid)}</span></div>`:''}
@@ -1557,7 +1598,7 @@ function buildReceiptText(i){
     '',
     `Subtotal: ${fmt(i.subtotal)}`,
     `Tax: ${fmt(i.tax)}`,
-    i.discount?`Discount${i.discountPct?' ('+i.discountPct+'%)':''}: -${fmt(i.discount)}`:'',
+    i.discount?`Discount${i.discountPct?' ('+i.discountPct+'%)':''}${discScopeLabel(i)}: -${fmt(i.discount)}`:'',
     `*TOTAL: ${fmt(i.total)}*`,
     `Paid (${i.payment}): ${fmt(i.paid)}`,
     due>0?`Balance due: ${fmt(due)}`:'',
