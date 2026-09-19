@@ -1021,7 +1021,7 @@ function newDraft(){
   return {id:uid('inv_'),number:'INV-'+state.counters.invoiceSeq,date:todayISO(),dueDate:todayISO(),customerId:state.customers[0]?.id,customerName:'',customerType:'Walk-in',taxRateOverride:'',discountPct:0,lines:[],discount:0,paid:0,payment:'Cash',notes:'',status:'unpaid',createdBy:currentUser()||'Founder',createdAt:Date.now()};
 }
 function viewNewInvoice(){
-  if(!_draft) _draft=newDraft();
+  if(!_draft){ _draft=newDraft(); _pickedCustId=null; }
   ensureWalkInCustomer();
   if(!state.customers.find(c=>c.id===_draft.customerId)) _draft.customerId = state.customers[0].id;
   return `
@@ -1055,12 +1055,15 @@ function viewNewInvoice(){
             </div>
             <div>
               <label class="text-xs font-medium text-stone-500">Customer name</label>
-              <input list="custNameList" placeholder="Leave blank for walk-in customer" value="${_draft.customerName ?? (findCust(_draft.customerId)&&findCust(_draft.customerId).name!=='Walk-in Customer'?findCust(_draft.customerId).name:'')}" oninput="_draft.customerName=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" autocomplete="off" />
-              <datalist id="custNameList">${state.customers.filter(c=>c.name!=='Walk-in Customer').map(c=>`<option value="${c.name}">`).join('')}</datalist>
+              <div class="relative">
+                <input id="custNameInput" placeholder="Type name or phone — past customers appear" value="${escHtml(_draft.customerName ?? (findCust(_draft.customerId)&&findCust(_draft.customerId).name!=='Walk-in Customer'?findCust(_draft.customerId).name:''))}" oninput="onCustNameInput(this.value)" onfocus="showCustSuggest('name')" onblur="hideCustSuggest('name')" onkeydown="custSuggestKey(event,'name')" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400" autocomplete="off" />
+                <div id="custSuggest_name" class="hidden absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-xl shadow-lg overflow-hidden max-h-72 overflow-y-auto scroll-thin"></div>
+              </div>
+              <div id="custMatchInfo" class="hidden mt-1 text-[11px] text-emerald-700 dark:text-emerald-400"></div>
             </div>
             <div>
               <label class="text-xs font-medium text-stone-500">Customer Type</label>
-              <select onchange="_draft.customerType=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
+              <select id="custTypeSel" onchange="_draft.customerType=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none">
                 <option value="Walk-in" ${(_draft.customerType||'Walk-in')==='Walk-in'?'selected':''}>&#x1F6B6; Walk-in</option>
                 <option value="Online" ${_draft.customerType==='Online'?'selected':''}>&#x1F310; Online</option>
               </select>
@@ -1068,7 +1071,10 @@ function viewNewInvoice(){
             ${renderTaxControls()}
             <div>
               <label class="text-xs font-medium text-stone-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i> Customer phone <span class="text-stone-400">(for WhatsApp)</span></label>
-              <input type="tel" inputmode="tel" placeholder="+91 98765 43210" value="${_draft.phoneOverride||''}" oninput="_draft.phoneOverride=this.value" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" />
+              <div class="relative">
+                <input id="custPhoneInput" type="tel" inputmode="tel" placeholder="+91 98765 43210" value="${escHtml(_draft.phoneOverride||'')}" oninput="onCustPhoneInput(this.value)" onfocus="showCustSuggest('phone')" onblur="hideCustSuggest('phone')" onkeydown="custSuggestKey(event,'phone')" class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 outline-none focus:border-brand-400 num" autocomplete="off" />
+                <div id="custSuggest_phone" class="hidden absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-[#141416] border border-stone-200 dark:border-stone-800 rounded-xl shadow-lg overflow-hidden max-h-72 overflow-y-auto scroll-thin"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1410,7 +1416,143 @@ function stopBarcodeScan(){
   try{ _scanStream?.getTracks().forEach(t=>t.stop()); }catch(_){}
   _scanStream=null; _scanLoop=null;
 }
-function cancelDraft(){ _draft=null; go(isTeam()?'#/team-pos':'#/sales'); }
+function cancelDraft(){ _draft=null; _pickedCustId=null; go(isTeam()?'#/team-pos':'#/sales'); }
+
+/* ---------- Similar-customer suggestions (New Bill) ----------
+   As the cashier types a name (or phone digits) we look up past customers that
+   are the same or *similar* (prefix, contains, small typos) and offer them in a
+   dropdown. Tapping one fills name, phone and type so repeat customers are
+   never re-entered — or accidentally duplicated under a slightly different spelling. */
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+let _pickedCustId=null;
+const _suggestList={name:[],phone:[]}, _suggestIdx={name:-1,phone:-1};
+const _normName=s=>String(s||'').toLowerCase().replace(/[^\p{L}\p{N} ]+/gu,' ').replace(/\s+/g,' ').trim();
+const _digits=s=>String(s||'').replace(/\D/g,'');
+function _lev(a,b){
+  if(a===b) return 0;
+  if(!a.length) return b.length; if(!b.length) return a.length;
+  let prev=Array.from({length:b.length+1},(_,j)=>j);
+  for(let i=1;i<=a.length;i++){
+    const cur=[i];
+    for(let j=1;j<=b.length;j++) cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    prev=cur;
+  }
+  return prev[b.length];
+}
+// How well does one typed word match one word of a saved name? 3=prefix, 2=contains, 1=typo-close, 0=no
+function _tokMatch(qt, nt){
+  if(nt.startsWith(qt)) return 3;
+  if(qt.length<3) return 0;
+  if(nt.includes(qt)) return 2;
+  const tol=qt.length>=6?2:1;
+  if(_lev(qt,nt)<=tol) return 1;
+  if(nt.length>qt.length && _lev(qt,nt.slice(0,qt.length))<=tol) return 1;
+  return 0;
+}
+function _custStats(){
+  const m={};
+  state.invoices.forEach(i=>{ const s=m[i.customerId]||(m[i.customerId]={n:0,last:''}); s.n++; if((i.date||'')>s.last) s.last=i.date||''; });
+  return m;
+}
+function findSimilarCustomers(query, field){
+  const stats=_custStats();
+  const pool=state.customers.filter(c=>c.name!=='Walk-in Customer');
+  const raw=String(query||'').trim();
+  const phoneMode = field==='phone' || /^[+\d][\d\s\-]*$/.test(raw);
+  const out=[];
+  if(phoneMode){
+    let qd=_digits(raw); if(qd.length>10) qd=qd.slice(-10);
+    if(qd.length<3) return [];
+    pool.forEach(c=>{
+      const cd=_digits(c.phone); if(!cd) return;
+      const score = cd.endsWith(qd)?90 : cd.includes(qd)?70 : 0;
+      if(score) out.push({c,score,st:stats[c.id]||{n:0,last:''}});
+    });
+  } else {
+    const q=_normName(raw); if(q.length<2) return [];
+    const qt=q.split(' ');
+    pool.forEach(c=>{
+      const nn=_normName(c.name), nt=nn.split(' ');
+      let score;
+      if(nn===q) score=100;
+      else {
+        let total=0;
+        for(const t of qt){ const best=Math.max(...nt.map(n=>_tokMatch(t,n))); if(!best){ total=-1; break; } total+=best; }
+        if(total<0) return;
+        score=50+(total/qt.length)*10+(nn.startsWith(q)?20:0);
+      }
+      out.push({c,score,st:stats[c.id]||{n:0,last:''}});
+    });
+  }
+  out.sort((a,b)=> b.score-a.score || (b.st.last>a.st.last?1:b.st.last<a.st.last?-1:0) || a.c.name.localeCompare(b.c.name));
+  return out.slice(0,6);
+}
+function _hideSuggestBox(field){ const b=document.getElementById('custSuggest_'+field); if(b){ b.classList.add('hidden'); b.innerHTML=''; } _suggestList[field]=[]; _suggestIdx[field]=-1; }
+function renderCustSuggest(field, query){
+  const box=document.getElementById('custSuggest_'+field); if(!box) return;
+  const list=findSimilarCustomers(query, field);
+  // Nothing to offer, or the only match is the customer already picked
+  if(!list.length || (list.length===1 && list[0].c.id===_pickedCustId)){ _hideSuggestBox(field); return; }
+  _suggestList[field]=list; _suggestIdx[field]=-1;
+  box.innerHTML=`<div class="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-stone-400">Previous customers — tap to fill</div>`+list.map(({c,st},i)=>`
+    <div data-i="${i}" onmousedown="event.preventDefault(); pickCust('${c.id}')" class="px-3 py-2 cursor-pointer flex items-center justify-between gap-3 hover:bg-stone-50 dark:hover:bg-stone-900 border-t border-stone-100 dark:border-stone-800">
+      <div class="min-w-0">
+        <div class="text-sm font-medium truncate">${escHtml(c.name)}</div>
+        <div class="text-[11px] text-stone-500 num truncate">${c.phone?escHtml(c.phone):'No phone saved'}</div>
+      </div>
+      <div class="text-[11px] text-stone-400 text-right shrink-0">${st.n?`${st.n} bill${st.n>1?'s':''}<br>last ${dateNice(st.last)}`:'No bills yet'}</div>
+    </div>`).join('');
+  box.classList.remove('hidden');
+}
+function _highlightSuggest(field){
+  const box=document.getElementById('custSuggest_'+field); if(!box) return;
+  box.querySelectorAll('[data-i]').forEach(el=>{
+    const on=Number(el.dataset.i)===_suggestIdx[field];
+    el.classList.toggle('bg-stone-100',on); el.classList.toggle('dark:bg-stone-900',on);
+  });
+}
+function onCustNameInput(v){
+  _draft.customerName=v;
+  if(_pickedCustId){
+    const p=findCust(_pickedCustId);
+    if(!p || _normName(p.name)!==_normName(v)){ _pickedCustId=null; const i=document.getElementById('custMatchInfo'); if(i) i.classList.add('hidden'); }
+  }
+  renderCustSuggest('name', v);
+}
+function onCustPhoneInput(v){ _draft.phoneOverride=v; renderCustSuggest('phone', v); }
+function showCustSuggest(field){
+  const el=document.getElementById(field==='name'?'custNameInput':'custPhoneInput');
+  if(el && el.value) renderCustSuggest(field, el.value);
+}
+function hideCustSuggest(field){
+  // Small delay so a tap on a suggestion registers first; skip if the field regained focus meanwhile
+  setTimeout(()=>{ const el=document.getElementById(field==='name'?'custNameInput':'custPhoneInput'); if(document.activeElement!==el) _hideSuggestBox(field); }, 150);
+}
+function custSuggestKey(e, field){
+  const list=_suggestList[field]; if(!list.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); _suggestIdx[field]=(_suggestIdx[field]+1)%list.length; _highlightSuggest(field); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _suggestIdx[field]=(_suggestIdx[field]-1+list.length)%list.length; _highlightSuggest(field); }
+  else if(e.key==='Enter' && _suggestIdx[field]>=0){ e.preventDefault(); pickCust(list[_suggestIdx[field]].c.id); }
+  else if(e.key==='Escape'){ _hideSuggestBox(field); }
+}
+function pickCust(id){
+  const c=findCust(id); if(!c || !_draft) return;
+  _pickedCustId=id;
+  _draft.customerName=c.name;
+  if(c.phone) _draft.phoneOverride=c.phone;
+  if(c.type==='Online'||c.type==='Walk-in') _draft.customerType=c.type;
+  const set=(elId,val)=>{ const el=document.getElementById(elId); if(el) el.value=val; };
+  set('custNameInput', c.name);
+  set('custPhoneInput', _draft.phoneOverride||'');
+  set('custTypeSel', _draft.customerType||'Walk-in');
+  _hideSuggestBox('name'); _hideSuggestBox('phone');
+  const st=_custStats()[id]||{n:0,last:''};
+  const info=document.getElementById('custMatchInfo');
+  if(info){
+    info.textContent = st.n ? `Returning customer · ${st.n} previous bill${st.n>1?'s':''} · last ${dateNice(st.last)}` : 'Saved customer · no previous bills';
+    info.classList.remove('hidden');
+  }
+}
 // Match the typed customer name to a saved customer, or create one on the fly.
 // Blank name = generic walk-in customer.
 function resolveDraftCustomer(){
@@ -1419,9 +1561,19 @@ function resolveDraftCustomer(){
   if(!name){
     const wc=state.customers.find(c=>c.name==='Walk-in Customer')||state.customers[0];
     _draft.customerId=wc.id;
+    _pickedCustId=null;
     return;
   }
-  let c=state.customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  let c=null;
+  // 1) The customer the cashier explicitly tapped from the suggestions
+  if(_pickedCustId){ const p=findCust(_pickedCustId); if(p && p.name.toLowerCase()===name.toLowerCase()) c=p; }
+  // 2) Same name — if several share it, prefer the one whose phone matches
+  if(!c){
+    const same=state.customers.filter(x=>x.name.toLowerCase()===name.toLowerCase());
+    const pd=_digits(_draft.phoneOverride).slice(-10);
+    c = (same.length>1 && pd.length>=6 && same.find(x=>_digits(x.phone).slice(-10)===pd)) || same[0] || null;
+  }
+  _pickedCustId=null;
   if(!c){
     c={id:uid('c_'),name,type:_draft.customerType||'Walk-in',phone:(_draft.phoneOverride||''),email:'',gstin:'',address:'',balance:0,credit:0,since:todayISO()};
     state.customers.push(c);
